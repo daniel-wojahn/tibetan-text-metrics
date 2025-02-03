@@ -4,7 +4,18 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A Python tool for computing various text similarity metrics on POS-tagged Tibetan texts. This tool is designed to analyze textual similarities and variations in Tibetan manuscripts using multiple computational approaches.
+A Python tool designed to analyze textual similarities and variations in Tibetan manuscripts using multiple computational approaches.
+
+## Background & Motivation
+
+TibetanTextMetrics (TTM) grew out of the challenge of analysing multiple editions of a 17th-century Tibetan legal text, "The Sixteen Legal Pronouncements" (*zhal lce bu drug*), as part of the [Law in Historic Tibet](https://www.law.ox.ac.uk/law-historic-tibet) project based at the Centre for Socio-Legal Studies, University of Oxford. While traditional collation tools like CollateX excel at creating critical editions, they can generate overwhelmingly detailed apparatuses. When dealing with substantially different editions rather than mere variant readings, a different approach becomes necessary. TTM addresses this by offering quantitative metrics to efficiently assess textual similarities at a chapter level, enabling researchers to identify and understand broader patterns of textual development.
+
+Key features and use cases:
+
+- **Chapter/Section-based Analysis**: Uses Tibetan section markers (*sbrul shad*, ༈) to automatically split texts into comparable units, enabling targeted analysis of specific sections
+- **Flexible Text Segmentation**: Adaptable for various historical texts and genres (a corpus like the many Sakya Genealogies (*sa skya gdung rabs*) or different editions of biographical literature (*rnam thar*) come to mind)
+- **Text Evolution Analysis**: Helps trace how texts evolved over time by identifying where successive authors and editors incorporated additional material
+- **Data-Driven Insights**: Provides quantitative metrics to complement qualitative textual analysis
 
 ## Features
 
@@ -46,6 +57,8 @@ Development dependencies include:
 - Performance: memory-profiler
 
 ## Usage
+
+> **⚠️ Important**: This tool requires at least one Tibetan section marker (*sbrul shad*, ༈) at the beginning of each input text. These markers are essential for the text segmentation functionality and preprocessing steps.
 
 1. Prepare your input files:
    - Place your POS-tagged Tibetan text files in the `input_files/` directory
