@@ -23,10 +23,10 @@ def compute_syntactic_distance(pos_seq1: List[str], pos_seq2: List[str]) -> floa
         pos_seq2: Second list of POS tags
 
     Returns:
-        Levenshtein distance between tag sequences
+        Levenshtein distance between tag sequences as a float
     """
-    # Convert sequences to tuples for Levenshtein distance
-    return Levenshtein.distance(tuple(pos_seq1), tuple(pos_seq2))
+    # Convert sequences to tuples for Levenshtein distance and cast result to float
+    return float(Levenshtein.distance(tuple(pos_seq1), tuple(pos_seq2)))
 
 
 def get_pos_weights() -> Dict[str, float]:
