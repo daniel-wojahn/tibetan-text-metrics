@@ -76,13 +76,28 @@ src/word2vec/藏文-音节/*
 src/word2vec/藏文-词级别/*
 !src/word2vec/藏文-词级别/.gitkeep
 
-# Model cache files
+# Model and large files
+*.vec
+*.bin
+*.model
 *.pkl
 *.npy
-*.vec
+*.npz
+*.h5
+*.hdf5
+*.pt
+*.pth
+*.ckpt
+*.pb
+*.onnx
+*.tflite
+*.mlmodel
+model_cache*
+*cache.pkl*
+*vectors.npy
 
+# Profiling and stats
 profile.stats
-model_cache.pkl
 *.prof
 *.lprof
 *.cprof
