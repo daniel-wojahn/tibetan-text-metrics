@@ -8,11 +8,11 @@ import pandas as pd
 from gensim.models import KeyedVectors
 from tqdm import tqdm
 
-from tibetan_text_metrics.metrics import (compute_lcs,
-                                          compute_syntactic_distance,
-                                          compute_weighted_jaccard,
-                                          compute_wmd)
-from tibetan_text_metrics.text_processor import extract_words_and_pos
+from .metrics import (compute_lcs,
+                      compute_syntactic_distance,
+                      compute_weighted_jaccard,
+                      compute_wmd)
+from .text_processor import extract_words_and_pos
 
 
 def compute_pairwise_analysis_pos(

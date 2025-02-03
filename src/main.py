@@ -7,9 +7,9 @@ from typing import Dict, List
 import pandas as pd
 from gensim.models import KeyedVectors
 
-from tibetan_text_metrics.analyzer import compute_pairwise_analysis_pos
-from tibetan_text_metrics.text_processor import read_text_files
-from tibetan_text_metrics.visualizer import save_results_and_visualize
+from .analyzer import compute_pairwise_analysis_pos
+from .text_processor import read_text_files
+from .visualizer import save_results_and_visualize
 
 
 def load_word2vec_model() -> KeyedVectors:
@@ -18,7 +18,7 @@ def load_word2vec_model() -> KeyedVectors:
     Returns:
         KeyedVectors: Loaded word2vec model
     """
-    # Get the path to the tibetan_text_metrics package directory
+    # Get the path to the package directory
     package_dir = Path(__file__).parent
     model_dir = package_dir / "word2vec" / "藏文-音节"
     cache_file = model_dir / "model_cache.pkl"
