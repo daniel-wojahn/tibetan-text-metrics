@@ -39,22 +39,45 @@ cd tibetan-text-metrics
    - Place the model files in `src/word2vec/藏文-音节/`
    - Required files: `word2vec_zang_yinjie.vec`
 
-3. Install the package and its dependencies:
-```bash
-pip install -e .
-```
+3. Set up your environment:
 
-This will install all required dependencies as specified in `pyproject.toml`. For development, you can install additional tools with:
-```bash
-pip install -e ".[dev]"
-```
+   **For Windows:**
+   - Install [Build Tools for Visual Studio](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
+     - During installation, select "Desktop development with C++"
+     - This is required for compiling Cython extensions
+   - Use a virtual environment (recommended):
+   ```cmd
+   python -m venv .venv
+   .venv\Scripts\activate
+   ```
 
-Development dependencies include:
-- Testing: pytest with coverage reporting
-- Code Quality: black (formatting), isort (import sorting), flake8 (linting)
-- Type Checking: mypy with pandas-stubs
-- Security: bandit
-- Performance: memory-profiler
+   **For macOS/Linux:**
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate
+   ```
+
+4. Install the package and its dependencies:
+   ```bash
+   pip install -e .
+   ```
+
+   For development, install additional tools:
+   ```bash
+   pip install -e ".[dev]"
+   ```
+
+   Development dependencies include:
+   - Testing: pytest with coverage reporting
+   - Code Quality: black (formatting), isort (import sorting), flake8 (linting)
+   - Type Checking: mypy with pandas-stubs
+   - Security: bandit
+   - Performance: memory-profiler
+
+   **Note for Windows users:** If you encounter any issues with Cython compilation, ensure that:
+   - Visual Studio Build Tools are properly installed
+   - You're using Python 3.10+ (Python 3.13 has known issues with gensim dependencies)
+   - Your environment variables are correctly set (usually handled by VS Build Tools installer)
 
 ## Usage
 
@@ -66,10 +89,18 @@ Development dependencies include:
    - For POS-tagging, you can use [ACTib](https://github.com/lothelanor/actib), which combines [Botok](https://github.com/OpenPecha/botok) for tokenization with Memory-Based Tagger for POS tagging. Note that POS tagging for Classical Tibetan is still an active area of research, and manual validation of the results is recommended.
 
 2. Run the analysis:
-```bash
-python -m tibetan_text_metrics.main
-```
-The tool will automatically process all text files in the `input_files` directory.
+
+   **For Windows:**
+   ```cmd
+   python -m tibetan_text_metrics.main
+   ```
+
+   **For macOS/Linux:**
+   ```bash
+   python -m tibetan_text_metrics.main
+   ```
+
+   The tool will automatically process all text files in the `input_files` directory. On Windows, this directory will be at `input_files\` relative to your project root.
 
 3. View results:
    - CSV file with metrics: `output/pos_tagged_analysis.csv`
@@ -105,6 +136,6 @@ If you use this tool in your research, please cite:
 }
 ```
 
-APA:
+MLA:
 ```text
-Wojahn, D. (2025). TibetanTextMetrics (TTM): Computing Text Similarity Metrics on POS-tagged Tibetan Texts (Version 0.1.0) [Computer software]. https://github.com/daniel-wojahn/tibetan-text-metrics
+Wojahn, Daniel. "TibetanTextMetrics (TTM): Computing Text Similarity Metrics on POS-tagged Tibetan Texts." Version 0.1.0, 2025, github.com/daniel-wojahn/tibetan-text-metrics.

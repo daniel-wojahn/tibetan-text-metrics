@@ -27,7 +27,14 @@ venv/
 
 # Project-specific
 input_files/*
-output/
+!input_files/.gitkeep
+output/*
+!output/.gitkeep
+
+# Coverage
+.coverage*
+coverage.xml
+htmlcov/
 
 # Model and cache files
 *.vec
