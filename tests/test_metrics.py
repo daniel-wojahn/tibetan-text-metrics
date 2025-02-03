@@ -1,5 +1,5 @@
 import pytest
-from tibetan_text_metrics.metrics import (
+from src.metrics import (
     compute_lcs,
     compute_syntactic_distance,
     compute_weighted_jaccard,

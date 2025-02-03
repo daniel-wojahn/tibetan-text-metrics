@@ -1,4 +1,4 @@
-name: CI
+name: Run Tests and Upload Coverage
 
 on:
   push:
@@ -25,6 +25,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+        pip install pytest pytest-cov mypy black isort flake8 bandit
         pip install -e .
         
     - name: Create directories
@@ -36,15 +37,19 @@ jobs:
         touch src/word2vec/藏文-词级别/word2vec_zang_tool.vec
         touch src/word2vec/藏文-音节/word2vec_zang_yinjie.vec
         
-    - name: Run tests with coverage
+    - name: Run tests and collect coverage
       run: |
-        pytest tests/ --cov=src --cov-report=xml
+        python -m pytest
         
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
       with:
-        file: ./coverage.xml
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
         fail_ci_if_error: true
+        verbose: true
         
     - name: Type checking
       run: |
@@ -52,9 +57,9 @@ jobs:
         
     - name: Style checking
       run: |
-        black --check src/
-        isort --check-only src/
-        flake8 src/
+        black --check src/ tests/
+        isort --check-only src/ tests/
+        flake8 src/ tests/
         
     - name: Security check
       run: |
