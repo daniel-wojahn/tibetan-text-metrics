@@ -1,7 +1,7 @@
 # Tibetan Text Metrics (TTM)
 
-[![CI](https://github.com/daniel-wojahn/tibetan_text_metrics/actions/workflows/ci.yml/badge.svg)](https://github.com/daniel-wojahn/tibetan_text_metrics/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/daniel-wojahn/tibetan_text_metrics/branch/main/graph/badge.svg)](https://codecov.io/gh/daniel-wojahn/tibetan_text_metrics)
+[![CI](https://github.com/daniel-wojahn/tibetan-text-metrics/actions/workflows/ci.yml/badge.svg)](https://github.com/daniel-wojahn/tibetan-text-metrics/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/daniel-wojahn/tibetan-text-metrics/branch/main/graph/badge.svg)](https://codecov.io/gh/daniel-wojahn/tibetan-text-metrics)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -51,8 +51,8 @@ TTM/
 
 1. Clone this repository:
 ```bash
-git clone https://github.com/daniel-wojahn/tibetan_text_metrics.git
-cd tibetan_text_metrics
+git clone https://github.com/daniel-wojahn/tibetan-text-metrics.git
+cd tibetan-text-metrics
 ```
 
 2. Download the required word2vec files:
@@ -187,7 +187,7 @@ If you use this tool in your research, please cite:
   title = {TibetanTextMetrics (TTM): Computing Text Similarity Metrics on POS-tagged Tibetan Texts},
   author = {Daniel Wojahn},
   year = {2025},
-  url = {https://github.com/daniel-wojahn/tibetan_text_metrics}
+  url = {https://github.com/daniel-wojahn/tibetan-text-metrics}
 }
 ```
 
