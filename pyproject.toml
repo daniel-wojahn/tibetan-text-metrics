@@ -5,11 +5,6 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools]
 package-dir = {"" = "src"}
 
-[tool.setuptools.ext-modules]
-extension-name = "tibetan_text_metrics.fast_lcs"
-sources = ["src/tibetan_text_metrics/fast_lcs.pyx"]
-include-dirs = ["${NUMPY_INCLUDE}"]
-
 [project]
 name = "tibetan-text-metrics"
 version = "0.1.0"
