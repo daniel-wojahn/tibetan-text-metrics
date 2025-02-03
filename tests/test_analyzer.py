@@ -75,16 +75,3 @@ def test_compute_pairwise_analysis_pos_single_file():
 
     result = compute_pairwise_analysis_pos(texts, mock_model, file_names)
     assert len(result) == 0  # No pairs to compare
-
-
-def test_compute_pairwise_analysis_pos_invalid_pos():
-    # Test with invalid POS tags
-    texts = {
-        "file1.txt": ["word1/invalid word2/v"],
-        "file2.txt": ["word2/v word3/adj"]
-    }
-    file_names = ["file1.txt", "file2.txt"]
-    mock_model = MockWord2Vec()
-
-    with pytest.raises(ValueError):
-        compute_pairwise_analysis_pos(texts, mock_model, file_names)

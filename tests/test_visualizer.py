@@ -46,8 +46,15 @@ def test_save_results_and_visualize(sample_results_df, monkeypatch):
         assert all(col in saved_df.columns for col in sample_results_df.columns)
         
         # Check if visualization files were created
-        plot_path = Path(tmpdir) / "output" / "heatmap.png"
-        assert plot_path.exists()
+        expected_plots = [
+            "heatmap_syntactic_distance.png",
+            "heatmap_weighted_jaccard.png",
+            "heatmap_lcs.png",
+            "heatmap_wmd.png"
+        ]
+        for plot_name in expected_plots:
+            plot_path = Path(tmpdir) / "output" / plot_name
+            assert plot_path.exists(), f"Missing plot: {plot_name}"
 
 
 def test_save_results_and_visualize_empty(monkeypatch):
@@ -69,6 +76,10 @@ def test_save_results_and_visualize_empty(monkeypatch):
         # Check if CSV file was created even if empty
         csv_path = Path(tmpdir) / "output" / "pos_tagged_analysis.csv"
         assert csv_path.exists()
+        
+        # No plots should be created for empty DataFrame
+        plot_path = Path(tmpdir) / "output" / "heatmap_syntactic_distance.png"
+        assert not plot_path.exists()
 
 
 def test_save_results_and_visualize_single_row(monkeypatch):
@@ -95,3 +106,14 @@ def test_save_results_and_visualize_single_row(monkeypatch):
         # Check if files were created
         csv_path = Path(tmpdir) / "output" / "pos_tagged_analysis.csv"
         assert csv_path.exists()
+        
+        # Check if visualization files were created
+        expected_plots = [
+            "heatmap_syntactic_distance.png",
+            "heatmap_weighted_jaccard.png",
+            "heatmap_lcs.png",
+            "heatmap_wmd.png"
+        ]
+        for plot_name in expected_plots:
+            plot_path = Path(tmpdir) / "output" / plot_name
+            assert plot_path.exists(), f"Missing plot: {plot_name}"
