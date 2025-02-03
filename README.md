@@ -38,18 +38,19 @@ This will install all required dependencies as specified in `pyproject.toml`. Fo
 pip install -e ".[dev]"
 ```
 
-This includes:
-- pytest and pytest-cov for testing and coverage
-- black, isort, and flake8 for code formatting
-- mypy for type checking
-- bandit for security checks
+Development dependencies include:
+- Testing: pytest with coverage reporting
+- Code Quality: black (formatting), isort (import sorting), flake8 (linting)
+- Type Checking: mypy with pandas-stubs
+- Security: bandit
+- Performance: memory-profiler
 
 ## Usage
 
 1. Prepare your input files:
    - Place your POS-tagged Tibetan text files in the `input_files/` directory
    - Files should use the format: `word1/POS1 word2/POS2 word3/POS3`
-   - For POS-tagging, we recommend using [ACTib](https://github.com/lothelanor/actib), a reliable tool for Tibetan text annotation
+   - For POS-tagging, you can use [ACTib](https://github.com/lothelanor/actib), which combines [Botok](https://github.com/OpenPecha/botok) for tokenization with Memory-Based Tagger for POS tagging. Note that POS tagging for Classical Tibetan is still an active area of research, and manual validation of the results is recommended.
 
 2. Run the analysis:
 ```bash
@@ -71,7 +72,7 @@ The tool generates:
   - LCS length
   - Word Mover's Distance
 
-For the Weighted Jaccard Similarity metric, you can customize POS tag weights in `metrics.py` to control how different parts of speech affect the similarity score - play around with different weights to see how they affect the results.
+For the Weighted Jaccard Similarity metric, you can customize POS tag weights in `metrics.py` to control how different parts of speech affect the similarity score. This allows you to give more weight to content words (nouns, verbs) versus function words, for example.
 
 ## License
 
@@ -86,5 +87,11 @@ If you use this tool in your research, please cite:
   title = {TibetanTextMetrics (TTM): Computing Text Similarity Metrics on POS-tagged Tibetan Texts},
   author = {Daniel Wojahn},
   year = {2025},
-  url = {https://github.com/daniel-wojahn/tibetan-text-metrics}
+  url = {https://github.com/daniel-wojahn/tibetan-text-metrics},
+  version = {0.1.0}
 }
+```
+
+APA:
+```text
+Wojahn, D. (2025). TibetanTextMetrics (TTM): Computing Text Similarity Metrics on POS-tagged Tibetan Texts (Version 0.1.0) [Computer software]. https://github.com/daniel-wojahn/tibetan-text-metrics
