@@ -14,13 +14,12 @@ from src.visualizer import save_results_and_visualize
 def sample_results_df():
     # Create a sample DataFrame that matches the expected structure
     data = {
-        "file1": ["text1.txt", "text1.txt"],
-        "file2": ["text2.txt", "text3.txt"],
-        "chapter": [1, 2],
-        "lcs": [5, 3],
-        "syntactic_distance": [0.8, 0.6],
-        "weighted_jaccard": [0.7, 0.4],
-        "wmd": [0.3, 0.5]
+        "Text Pair": ["text1.txt vs text2.txt", "text1.txt vs text3.txt"],
+        "Chapter": [1, 2],
+        "Syntactic Distance (POS Level)": [0.8, 0.6],
+        "Weighted Jaccard Similarity (%)": [70.0, 40.0],
+        "LCS Length": [5, 3],
+        "Word Mover's Distance": [0.3, 0.5]
     }
     return pd.DataFrame(data)
 
@@ -47,14 +46,16 @@ def test_save_results_and_visualize(sample_results_df, monkeypatch):
         assert all(col in saved_df.columns for col in sample_results_df.columns)
         
         # Check if visualization files were created
-        for metric in ["lcs", "syntactic_distance", "weighted_jaccard", "wmd"]:
-            plot_path = Path(tmpdir) / "output" / f"{metric}_heatmap.png"
-            assert plot_path.exists()
+        plot_path = Path(tmpdir) / "output" / "heatmap.png"
+        assert plot_path.exists()
 
 
 def test_save_results_and_visualize_empty(monkeypatch):
     # Test with empty DataFrame
-    empty_df = pd.DataFrame()
+    empty_df = pd.DataFrame(columns=[
+        "Text Pair", "Chapter", "Syntactic Distance (POS Level)",
+        "Weighted Jaccard Similarity (%)", "LCS Length", "Word Mover's Distance"
+    ])
     
     with tempfile.TemporaryDirectory() as tmpdir:
         def mock_parent():
@@ -73,13 +74,12 @@ def test_save_results_and_visualize_empty(monkeypatch):
 def test_save_results_and_visualize_single_row(monkeypatch):
     # Test with single row DataFrame
     data = {
-        "file1": ["text1.txt"],
-        "file2": ["text2.txt"],
-        "chapter": [1],
-        "lcs": [5],
-        "syntactic_distance": [0.8],
-        "weighted_jaccard": [0.7],
-        "wmd": [0.3]
+        "Text Pair": ["text1.txt vs text2.txt"],
+        "Chapter": [1],
+        "Syntactic Distance (POS Level)": [0.8],
+        "Weighted Jaccard Similarity (%)": [70.0],
+        "LCS Length": [5],
+        "Word Mover's Distance": [0.3]
     }
     single_row_df = pd.DataFrame(data)
     

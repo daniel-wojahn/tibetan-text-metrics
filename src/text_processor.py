@@ -29,18 +29,30 @@ def extract_words_and_pos(text: str) -> Tuple[List[str], List[str]]:
     """Extract words and POS tags from text.
 
     Args:
-        text: Raw text with words and POS tags.
+        text: Text with words and POS tags in format "word1/tag1 word2/tag2".
 
     Returns:
         Tuple of (words, pos_tags) lists.
+
+    Raises:
+        ValueError: If any word is missing a POS tag or has an invalid tag format.
     """
-    tokens = text.split()
+    if not text.strip():
+        return [], []
+
     words = []
     pos_tags = []
-    for token in tokens:
-        if "/" in token:
-            # Split on last '/' to handle cases like "བསྒྲུབ་པ/n.v.fut"
-            word, pos = token.rsplit("/", 1)
-            words.append(word.strip())
-            pos_tags.append(pos.strip())
+
+    for token in text.strip().split():
+        if "/" not in token:
+            raise ValueError(f"Missing POS tag in token: {token}")
+        
+        parts = token.split("/")
+        if len(parts) != 2 or not parts[0] or not parts[1]:
+            raise ValueError(f"Invalid POS tag format in token: {token}")
+        
+        word, pos = parts
+        words.append(word)
+        pos_tags.append(pos)
+
     return words, pos_tags

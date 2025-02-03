@@ -41,19 +41,18 @@ def test_compute_pairwise_analysis_pos(mock_model):
 
     # Check result structure
     assert isinstance(result, pd.DataFrame)
-    assert "file1" in result.columns
-    assert "file2" in result.columns
-    assert "chapter" in result.columns
-    assert "lcs" in result.columns
-    assert "syntactic_distance" in result.columns
-    assert "weighted_jaccard" in result.columns
-    assert "wmd" in result.columns
+    assert "Text Pair" in result.columns
+    assert "Chapter" in result.columns
+    assert "Syntactic Distance (POS Level)" in result.columns
+    assert "Weighted Jaccard Similarity (%)" in result.columns
+    assert "LCS Length" in result.columns
+    assert "Word Mover's Distance" in result.columns
 
     # Check data types
-    assert result["lcs"].dtype in [np.int32, np.int64]
-    assert result["syntactic_distance"].dtype == np.float64
-    assert result["weighted_jaccard"].dtype == np.float64
-    assert result["wmd"].dtype == np.float64
+    assert result["LCS Length"].dtype in [np.int32, np.int64]
+    assert result["Syntactic Distance (POS Level)"].dtype == np.float64
+    assert result["Weighted Jaccard Similarity (%)"].dtype == np.float64
+    assert result["Word Mover's Distance"].dtype == np.float64
 
 
 def test_compute_pairwise_analysis_pos_empty():
