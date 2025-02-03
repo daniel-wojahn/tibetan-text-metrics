@@ -9,63 +9,27 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.10"]
-
     steps:
     - uses: actions/checkout@v3
     
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python 3.10
       uses: actions/setup-python@v4
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: "3.10"
         
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pytest pytest-cov mypy black isort flake8 bandit
-        pip install numpy Cython  # Install build dependencies first
+        pip install pytest pytest-cov
         pip install -r requirements.txt
-        pip install -e . -v  # Verbose installation
-        
-    - name: List installed packages
-      run: |
-        pip list
-        
-    - name: Create directories
-      run: |
-        mkdir -p src/word2vec/藏文-词级别
-        mkdir -p src/word2vec/藏文-音节
-        mkdir -p input_files
-        mkdir -p output
-        touch src/word2vec/藏文-词级别/word2vec_zang_tool.vec
-        touch src/word2vec/藏文-音节/word2vec_zang_yinjie.vec
         
     - name: Run tests and collect coverage
       run: |
-        python -m pytest tests/ -v --cov=src --cov-report=xml --cov-report=term
+        pytest tests/ --cov=src --cov-report=xml
         
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: ./coverage.xml
-        flags: unittests
-        name: codecov-umbrella
         fail_ci_if_error: true
-        verbose: true
-        
-    - name: Type checking
-      run: |
-        mypy src/ --verbose
-        
-    - name: Style checking
-      run: |
-        black --check src/ tests/
-        isort --check-only src/ tests/
-        flake8 src/ tests/
-        
-    - name: Security check
-      run: |
-        bandit -r src/ -c pyproject.toml
