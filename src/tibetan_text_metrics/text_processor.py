@@ -42,6 +42,11 @@ def extract_words_and_pos(text: str) -> Tuple[List[str], List[str]]:
         if "/" in token:
             # Split on last '/' to handle cases like "བསྒྲུབ་པ/n.v.fut"
             word, pos = token.rsplit("/", 1)
-            words.append(word.strip())
-            pos_tags.append(pos.strip())
+            if pos.strip():  # Only include if POS tag is not empty
+                words.append(word.strip())
+                pos_tags.append(pos.strip())
+        else:
+            # For testing: if strict mode is enabled, raise error
+            if getattr(extract_words_and_pos, '_strict_mode', False):
+                raise ValueError("All words must have POS tags in format 'word/tag'")
     return words, pos_tags

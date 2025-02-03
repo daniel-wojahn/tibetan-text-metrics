@@ -7,7 +7,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from src.visualizer import save_results_and_visualize
+from tibetan_text_metrics.visualizer import save_results_and_visualize
 
 
 @pytest.fixture

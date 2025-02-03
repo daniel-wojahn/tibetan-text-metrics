@@ -40,7 +40,7 @@ def save_results_and_visualize(results_df: pd.DataFrame) -> None:
                 index="Chapter",
                 columns="Text Pair",
                 values="Syntactic Distance (POS Level)",
-            ).astype(int),
+            ).fillna(0).astype(int),
             "Reds",
             "Syntactic Distance: Shows the number of operations (insertions, deletions, substitutions) needed to transform one POS tag sequence into another.\nHigher values indicate more structural differences.",
             "d",
@@ -50,13 +50,13 @@ def save_results_and_visualize(results_df: pd.DataFrame) -> None:
                 index="Chapter",
                 columns="Text Pair",
                 values="Weighted Jaccard Similarity (%)",
-            ),
+            ).fillna(0),
             "Blues",
             "Weighted Jaccard Similarity: Measures unique vocabulary overlap with POS-based weighting.",
             ".1f",
         ),
         "LCS": (
-            results_df.pivot(index="Chapter", columns="Text Pair", values="LCS Length"),
+            results_df.pivot(index="Chapter", columns="Text Pair", values="LCS Length").fillna(0).astype(int),
             "Greens",
             "LCS Length: Measures the length of the longest common subsequence of words between text pairs.",
             ".0f",
@@ -64,7 +64,7 @@ def save_results_and_visualize(results_df: pd.DataFrame) -> None:
         "WMD": (
             results_df.pivot(
                 index="Chapter", columns="Text Pair", values="Word Mover's Distance"
-            ),
+            ).fillna(0),
             "Purples",
             "Word Mover's Distance: Measures the semantic distance between texts based on word embeddings.",
             ".2f",
@@ -74,6 +74,10 @@ def save_results_and_visualize(results_df: pd.DataFrame) -> None:
     print("\nGenerating visualizations...")
     # Generate heatmaps
     for metric_name, (data, cmap, description, fmt) in pivot_data.items():
+        if data.empty:
+            print(f"Skipping {metric_name} visualization: no data available")
+            continue
+
         # All plots use the same figure size for consistent cell proportions
         plt.figure(figsize=(12, 8))
 

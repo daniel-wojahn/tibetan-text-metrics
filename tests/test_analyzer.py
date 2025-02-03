@@ -8,7 +8,7 @@ import pandas as pd
 import pytest
 from gensim.models import KeyedVectors
 
-from src.analyzer import compute_pairwise_analysis_pos
+from tibetan_text_metrics.analyzer import compute_pairwise_analysis_pos
 
 
 class MockWord2Vec:

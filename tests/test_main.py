@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from gensim.models import KeyedVectors
 
-from src.main import load_word2vec_model, main
+from tibetan_text_metrics.main import load_word2vec_model, main
 
 
 def create_mock_word2vec_file(model_dir: Path):

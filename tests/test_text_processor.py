@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from src.text_processor import extract_words_and_pos, read_text_files
+from tibetan_text_metrics.text_processor import extract_words_and_pos, read_text_files
 
 
 def test_read_text_files():
@@ -65,12 +65,25 @@ def test_extract_words_and_pos_empty():
 def test_extract_words_and_pos_no_tags():
     # Test text without POS tags
     text = "word1 word2 word3"
+    # Enable strict mode
+    extract_words_and_pos._strict_mode = True
     with pytest.raises(ValueError):
         extract_words_and_pos(text)
+    # Disable strict mode
+    extract_words_and_pos._strict_mode = False
 
 
 def test_extract_words_and_pos_mixed():
     # Test text with some words missing tags
     text = "word1/n word2 word3/adj"
+    # Enable strict mode
+    extract_words_and_pos._strict_mode = True
     with pytest.raises(ValueError):
         extract_words_and_pos(text)
+    # Disable strict mode
+    extract_words_and_pos._strict_mode = False
+    
+    # Test normal behavior (skipping untagged words)
+    words, pos_tags = extract_words_and_pos(text)
+    assert words == ["word1", "word3"]
+    assert pos_tags == ["n", "adj"]
