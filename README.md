@@ -52,6 +52,7 @@ cd tibetan-text-metrics
    ```
 
    **For macOS/Linux:**
+   - I recommend using Python 3.10 or later(Python 3.13 has known issues with gensim dependencies)
    ```bash
    python -m venv .venv
    source .venv/bin/activate
@@ -90,16 +91,9 @@ cd tibetan-text-metrics
 
 2. Run the analysis:
 
-   **For Windows:**
    ```cmd
    python -m tibetan_text_metrics.main
    ```
-
-   **For macOS/Linux:**
-   ```bash
-   python -m tibetan_text_metrics.main
-   ```
-
    The tool will automatically process all text files in the `input_files` directory. On Windows, this directory will be at `input_files\` relative to your project root.
 
 3. View results:
