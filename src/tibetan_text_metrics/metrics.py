@@ -29,6 +29,30 @@ def compute_syntactic_distance(pos_seq1: List[str], pos_seq2: List[str]) -> floa
     return float(Levenshtein.distance(tuple(pos_seq1), tuple(pos_seq2)))
 
 
+def compute_normalized_syntactic_distance(pos_seq1: List[str], pos_seq2: List[str]) -> float:
+    """Compute normalized syntactic distance using Levenshtein distance.
+    
+    Normalized by the maximum length of the two sequences to create a value between 0 and 1.
+    
+    Args:
+        pos_seq1: First list of POS tags
+        pos_seq2: Second list of POS tags
+
+    Returns:
+        Normalized Levenshtein distance between tag sequences as a float between 0 and 1
+    """
+    if not pos_seq1 and not pos_seq2:
+        return 0.0
+        
+    distance = compute_syntactic_distance(pos_seq1, pos_seq2)
+    max_length = max(len(pos_seq1), len(pos_seq2))
+    
+    if max_length == 0:
+        return 0.0
+        
+    return distance / max_length
+
+
 def get_pos_weights() -> Dict[str, float]:
     """Get predefined weights for POS tags.
 
@@ -143,27 +167,3 @@ def compute_normalized_lcs(
         return 0.0
         
     return lcs_length / avg_length
-
-
-def compute_wmd(words1: List[str], words2: List[str], model: KeyedVectors) -> float:
-    """Compute Word Mover's Distance using word embeddings.
-
-    Args:
-        words1: Words from first text
-        words2: Words from second text
-        model: Loaded word2vec model
-
-    Returns:
-        float: Word Mover's Distance score
-    """
-    try:
-        # Filter words not in vocabulary first
-        words1 = [w for w in words1 if w in model]
-        words2 = [w for w in words2 if w in model]
-
-        if not words1 or not words2:
-            return float("inf")
-
-        return model.wmdistance(words1, words2)
-    except Exception:
-        return float("inf")

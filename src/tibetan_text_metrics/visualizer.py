@@ -7,28 +7,28 @@ import pandas as pd
 import seaborn as sns
 
 
-def save_results_and_visualize(results_df: pd.DataFrame) -> None:
+def save_results_and_visualize(results_df: pd.DataFrame, metrics_dir: Path, heatmaps_dir: Path) -> None:
     """Save results to CSV and generate heatmap visualizations.
 
     Args:
         results_df: DataFrame containing pairwise analysis results.
+        metrics_dir: Directory to save metrics CSV files.
+        heatmaps_dir: Directory to save heatmap visualizations.
     """
-    # Create output directory in project root if it doesn't exist
-    output_dir = Path(__file__).parent.parent.parent / "output"
-    output_dir.mkdir(parents=True, exist_ok=True)
-
     # Save results to CSV
-    csv_path = output_dir / "pos_tagged_analysis.csv"
+    csv_path = metrics_dir / "pos_tagged_analysis.csv"
     results_df.to_csv(csv_path, index=False, float_format="%.15f")
     print(f"\nResults saved to {csv_path}")
 
     # Convert columns to numeric
     numeric_columns = [
         "Syntactic Distance (POS Level)",
+        "Normalized Syntactic Distance",
         "Weighted Jaccard Similarity (%)",
         "LCS Length",
         "Normalized LCS (%)",
-        "Word Mover's Distance",
+        "Chapter Length 1",
+        "Chapter Length 2",
     ]
 
     for col in numeric_columns:
@@ -45,6 +45,16 @@ def save_results_and_visualize(results_df: pd.DataFrame) -> None:
             "Reds",
             "Syntactic Distance: Shows the number of operations (insertions, deletions, substitutions) needed to transform one POS tag sequence into another.\nHigher values indicate more structural differences.",
             "d",
+        ),
+        "Normalized Syntactic Distance": (
+            results_df.pivot(
+                index="Chapter",
+                columns="Text Pair",
+                values="Normalized Syntactic Distance",
+            ).fillna(0),
+            "Reds",  # Changed from Reds_r to Reds for 0=white, 1=dark red
+            "Normalized Syntactic Distance: Shows the proportion of POS tags that differ between texts (0-1).\nNormalized by text length to allow fair comparison between chapters of different sizes.\nHigher values (darker red) indicate greater differences.",
+            ".2f",
         ),
         "Weighted Jaccard": (
             results_df.pivot(
@@ -67,14 +77,6 @@ def save_results_and_visualize(results_df: pd.DataFrame) -> None:
             "YlGn",
             "Normalized LCS: Measures the length of the longest common subsequence divided by average chapter length.\nHigher percentages indicate greater sequential similarity, normalized for chapter size.",
             ".1f",
-        ),
-        "WMD": (
-            results_df.pivot(
-                index="Chapter", columns="Text Pair", values="Word Mover's Distance"
-            ).fillna(0),
-            "Purples",
-            "Word Mover's Distance: Measures the semantic distance between texts based on word embeddings.",
-            ".2f",
         ),
     }
 
@@ -111,7 +113,7 @@ def save_results_and_visualize(results_df: pd.DataFrame) -> None:
 
         # Save figure
         output_path = (
-            output_dir / f'heatmap_{metric_name.lower().replace(" ", "_")}.png'
+            heatmaps_dir / f'heatmap_{metric_name.lower().replace(" ", "_")}.png'
         )
         plt.savefig(output_path, bbox_inches="tight", dpi=300)
         plt.close()

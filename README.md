@@ -19,12 +19,17 @@ TibetanTextMetrics (TTM) grew out of the challenge of analysing multiple edition
 
 ## Features
 
-- Syntactic Distance (POS Level): Counts the number of operations needed to transform one POS tag sequence into another
-- Weighted Jaccard Similarity: Measures vocabulary overlap with POS-based weighting (customizable in `metrics.py`)
-- Longest Common Subsequence (LCS): Identifies shared sequences of words (Cython-optimized, ~196x faster)
-- Word Mover's Distance (WMD): Measures semantic similarity using word embeddings
-- Generate visualizations of similarity metrics
-- Support for POS-tagged Tibetan text analysis
+- **Syntactic Distance**: Counts the number of operations needed to transform one POS tag sequence into another. Also provides a normalized version (0-1) scaled by text length, enabling fair comparison between chapters of different sizes.
+
+- **Weighted Jaccard Similarity**: Measures vocabulary overlap with POS-based weighting (customizable in `metrics.py`), allowing you to emphasize content words like nouns and verbs over function words.
+
+- **Longest Common Subsequence (LCS)**: Identifies shared sequences of words (Cython-optimized, ~196x faster). Both raw counts and normalized percentages (relative to average text length) are provided.
+
+- **Principal Component Analysis (PCA)**: Provides multi-dimensional visualization of textual relationships, offering a holistic approach to identifying manuscript traditions by combining multiple metrics into an intuitive visual representation.
+
+- **Visualizations**: Generate heatmaps for individual metrics and PCA plots that help identify clusters of similar texts and chapters.
+
+- **Support for POS-tagged Tibetan text analysis**
 
 ## Installation
 
@@ -33,13 +38,7 @@ TibetanTextMetrics (TTM) grew out of the challenge of analysing multiple edition
 git clone https://github.com/daniel-wojahn/tibetan-text-metrics.git
 cd tibetan-text-metrics
 ```
-
-2. Download the required word2vec files:
-   - Download the MiLMo Word2Vec model (syllable-level) from [Hugging Face](https://huggingface.co/CMLI-NLP/MiLMo/tree/main)
-   - Place the model files in `src/word2vec/藏文-音节/`
-   - Required files: `word2vec_zang_yinjie.vec`
-
-3. Set up your environment:
+2. Set up your environment:
 
    **For Windows:**
    - Install [Build Tools for Visual Studio](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
@@ -103,14 +102,43 @@ cd tibetan-text-metrics
 ## Output
 
 The tool generates:
-- CSV file with pairwise similarity metrics
-- Heatmap visualizations for each metric:
-  - Syntactic distance (POS level)
-  - Weighted Jaccard similarity
-  - LCS length
-  - Word Mover's Distance
+- **CSV files**:
+  - `pos_tagged_analysis.csv`: Complete pairwise analysis with all metrics (both raw and normalized)
+  - `pca_data.csv`: PCA coordinates with normalized metrics for further analysis
+  - `pca_loadings.csv`: Shows how each metric contributes to the principal components
+
+- **Visualizations**:
+  - Heatmaps for each metric (normalized and raw versions)
+  - Interactive PCA plots showing chapter relationships by text pair and by chapter with explanations
+  - Feature vector projections showing the contribution of each metric to the principal components
 
 For the Weighted Jaccard Similarity metric, you can customize POS tag weights in `metrics.py` to control how different parts of speech affect the similarity score. This allows you to give more weight to content words (nouns, verbs) versus function words, for example.
+
+### Understanding Normalized Metrics
+
+Normalization is crucial when comparing chapters of different lengths. For example:
+- Raw syntactic distance between two 1000-word chapters might be 200 operations
+- Raw syntactic distance between two 100-word chapters might be 20 operations
+- Despite the 10x difference in raw values, both represent the same proportional difference (20%)
+
+Normalized metrics address this by scaling values relative to text length, providing fair comparisons that aren't biased by chapter size.
+
+### PCA Visualization
+
+The tool includes an enhanced Principal Component Analysis (PCA) visualization that helps interpret the relationships between different text chapters based on multiple metrics simultaneously:
+
+- **Interactive HTML plot** with hover information for each data point
+- **Clear metric labels** positioned in the corners of the visualization
+- **Built-in explanation** of how to interpret the PCA results
+- **Visual clustering** to identify outliers and pattern groups
+
+The PCA visualization can be found in `output/pca/interactive_pca_visualization.html` and provides:
+
+1. A scatterplot where each point represents a chapter comparison
+2. Points are colored by text pair to identify patterns within comparisons
+3. Main and secondary cluster regions with clear visual boundaries
+
+This visualization is particularly useful for identifying which chapters have unusual similarity patterns compared to others.
 
 ## License
 
@@ -126,7 +154,7 @@ If you use this tool in your research, please cite:
   author = {Daniel Wojahn},
   year = {2025},
   url = {https://github.com/daniel-wojahn/tibetan-text-metrics},
-  version = {0.1.0}
+  version = {0.3.0}
 }
 ```
 

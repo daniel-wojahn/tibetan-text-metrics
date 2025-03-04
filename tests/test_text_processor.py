@@ -27,12 +27,12 @@ def test_read_text_files():
         
         # Check results
         assert len(result) == 2
-        assert "test1.txt" in result
-        assert "test2.txt" in result
-        assert len(result["test1.txt"]) == 3
-        assert len(result["test2.txt"]) == 2
-        assert result["test1.txt"] == ["Chapter 1", "Chapter 2", "Chapter 3"]
-        assert result["test2.txt"] == ["Chapter 1", "Chapter 2"]
+        assert "test1" in result  # Using stem instead of full filename
+        assert "test2" in result  # Using stem instead of full filename
+        assert len(result["test1"]) == 3
+        assert len(result["test2"]) == 2
+        assert result["test1"] == ["Chapter 1", "Chapter 2", "Chapter 3"]
+        assert result["test2"] == ["Chapter 1", "Chapter 2"]
 
 
 def test_read_text_files_empty():

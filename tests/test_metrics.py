@@ -29,8 +29,3 @@ def test_weighted_jaccard():
     similarity = compute_weighted_jaccard(words1, pos1, words2, pos2)
     assert isinstance(similarity, float)
     assert 0 <= similarity <= 1
-
-# Skip WMD tests in CI since we don't have the actual word2vec files
-@pytest.mark.skip(reason="Word2Vec model not available in CI")
-def test_word_mover_distance():
-    pass

@@ -71,8 +71,19 @@ def test_load_word2vec_model_missing_file(monkeypatch):
         model_dir = tmp_path / "word2vec" / "藏文-音节"
         model_dir.mkdir(parents=True)
         
-        # Patch __file__ to use our temporary directory
-        monkeypatch.setattr(Path, "parent", property(lambda _: tmp_path))
+        # Need to patch the specific part that finds the project root
+        import tibetan_text_metrics.main as main_module
+        
+        # Mock the project_root calculation to return our temp directory
+        def mock_get_project_root(*args, **kwargs):
+            return tmp_path
+        
+        # Reset cached model to ensure we test the file loading logic
+        if hasattr(load_word2vec_model, "_cached_model"):
+            load_word2vec_model._cached_model = None
+            
+        # Patch the project root function
+        monkeypatch.setattr(Path, "parent", property(mock_get_project_root))
         
         # Should raise FileNotFoundError when vec file is missing
         with pytest.raises(FileNotFoundError):
