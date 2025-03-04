@@ -52,7 +52,7 @@ def main() -> None:
         str(project_root / "input_files" / "Bailey.txt"),
         str(project_root / "input_files" / "Bhutan.txt"),
         str(project_root / "input_files" / "Dolanji.txt"),
-        str(project_root / "input_files" / "Leiden.txt"),
+        str(project_root / "input_files" / "LTWA.txt"),
         str(project_root / "input_files" / "Japan13.txt"),
     ]
 

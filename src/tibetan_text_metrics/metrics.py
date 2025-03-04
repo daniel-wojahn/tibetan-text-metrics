@@ -120,6 +120,31 @@ def compute_lcs(
     return int(dp[m, n])
 
 
+def compute_normalized_lcs(
+    words1: List[str], pos_tags1: List[str], words2: List[str], pos_tags2: List[str]
+) -> float:
+    """Compute normalized longest common subsequence between two texts.
+    
+    Normalized by the average length of the two texts to account for chapter size.
+    
+    Args:
+        words1: Words from first text
+        pos_tags1: POS tags from first text
+        words2: Words from second text
+        pos_tags2: POS tags from second text
+        
+    Returns:
+        float: Normalized LCS value between 0 and 1
+    """
+    lcs_length = compute_lcs(words1, pos_tags1, words2, pos_tags2)
+    avg_length = (len(words1) + len(words2)) / 2
+    
+    if avg_length == 0:
+        return 0.0
+        
+    return lcs_length / avg_length
+
+
 def compute_wmd(words1: List[str], words2: List[str], model: KeyedVectors) -> float:
     """Compute Word Mover's Distance using word embeddings.
 

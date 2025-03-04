@@ -27,6 +27,7 @@ def save_results_and_visualize(results_df: pd.DataFrame) -> None:
         "Syntactic Distance (POS Level)",
         "Weighted Jaccard Similarity (%)",
         "LCS Length",
+        "Normalized LCS (%)",
         "Word Mover's Distance",
     ]
 
@@ -60,6 +61,12 @@ def save_results_and_visualize(results_df: pd.DataFrame) -> None:
             "Greens",
             "LCS Length: Measures the length of the longest common subsequence of words between text pairs.",
             ".0f",
+        ),
+        "Normalized LCS": (
+            results_df.pivot(index="Chapter", columns="Text Pair", values="Normalized LCS (%)").fillna(0),
+            "YlGn",
+            "Normalized LCS: Measures the length of the longest common subsequence divided by average chapter length.\nHigher percentages indicate greater sequential similarity, normalized for chapter size.",
+            ".1f",
         ),
         "WMD": (
             results_df.pivot(
