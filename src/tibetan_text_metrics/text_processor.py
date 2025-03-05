@@ -26,50 +26,6 @@ def read_text_files(file_paths: List[str]) -> Dict[str, List[str]]:
     return texts
 
 
-def read_raw_text_files(file_paths: List[str]) -> Dict[str, List[str]]:
-    """
-    Read raw text files without POS tags for text comparison visualizations.
-    
-    Args:
-        file_paths: List of paths to text files.
-        
-    Returns:
-        Dictionary mapping filenames to list of raw text for each chapter.
-    """
-    # Look for raw text files in several possible locations
-    texts = {}
-    project_root = Path(file_paths[0]).parent.parent
-    
-    for file_path in file_paths:
-        file_stem = Path(file_path).stem
-        
-        # Try different possible locations for raw text files
-        potential_paths = [
-            project_root / "input_files" / "raw_input" / f"{file_stem}.txt",  # In input_files/raw_input
-            project_root / "input_files" / "raw" / f"{file_stem}.txt",  # In input_files/raw (alternative name)
-            Path(file_path)  # Fallback to original file
-        ]
-        
-        raw_file_path = None
-        for path in potential_paths:
-            if path.exists():
-                raw_file_path = path
-                break
-        
-        if raw_file_path is None:
-            print(f"Warning: Could not find raw text file for {file_stem}, using POS-tagged file instead.")
-            raw_file_path = Path(file_path)
-        
-        with open(raw_file_path, "r", encoding="utf-8") as f:
-            content = f.read().strip()
-            chapters = content.split("༈")
-            texts[file_stem] = [
-                chapter.strip() for chapter in chapters if chapter.strip()
-            ]
-    
-    return texts
-
-
 def extract_words_and_pos(text: str) -> Tuple[List[str], List[str]]:
     """Extract words and POS tags from text.
 

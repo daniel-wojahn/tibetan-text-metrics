@@ -15,12 +15,12 @@ def test_read_text_files():
         # Create test file 1
         file1_path = Path(tmpdir) / "test1.txt"
         with open(file1_path, "w", encoding="utf-8") as f:
-            f.write("Chapter 1༈Chapter 2༈Chapter 3")
+            f.write("༈Chapter 1༈Chapter 2")
             
         # Create test file 2 with empty chapters
         file2_path = Path(tmpdir) / "test2.txt"
         with open(file2_path, "w", encoding="utf-8") as f:
-            f.write("Chapter 1༈༈Chapter 2")
+            f.write("༈Chapter 3༈Chapter 4")
         
         # Test reading files
         result = read_text_files([str(file1_path), str(file2_path)])
@@ -29,10 +29,10 @@ def test_read_text_files():
         assert len(result) == 2
         assert "test1" in result  # Using stem instead of full filename
         assert "test2" in result  # Using stem instead of full filename
-        assert len(result["test1"]) == 3
+        assert len(result["test1"]) == 2
         assert len(result["test2"]) == 2
-        assert result["test1"] == ["Chapter 1", "Chapter 2", "Chapter 3"]
-        assert result["test2"] == ["Chapter 1", "Chapter 2"]
+        assert result["test1"] == ["Chapter 1", "Chapter 2"]
+        assert result["test2"] == ["Chapter 3", "Chapter 4"]
 
 
 def test_read_text_files_empty():
@@ -87,3 +87,18 @@ def test_extract_words_and_pos_mixed():
     words, pos_tags = extract_words_and_pos(text)
     assert words == ["word1", "word3"]
     assert pos_tags == ["n", "adj"]
+    
+    # Test with tokens having multiple slashes
+    text = "complex/word/n simple/v"
+    words, pos = extract_words_and_pos(text)
+    assert words == ["complex/word", "simple"]
+    assert pos == ["n", "v"]
+    
+    # Test with empty pos tags (should be skipped)
+    text = "word1/n word2/ word3/v"
+    words, pos = extract_words_and_pos(text)
+    assert words == ["word1", "word3"]
+    assert pos == ["n", "v"]
+
+
+

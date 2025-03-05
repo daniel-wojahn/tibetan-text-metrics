@@ -4,90 +4,106 @@ import os
 import tempfile
 from pathlib import Path
 
+import pandas as pd
 import pytest
-from gensim.models import KeyedVectors
+from tibetan_text_metrics.main import main
 
-from tibetan_text_metrics.main import load_word2vec_model, main
-
-
-def create_mock_word2vec_file(model_dir: Path):
-    """Create a minimal word2vec file for testing."""
-    vec_file = model_dir / "word2vec_zang_yinjie.vec"
-    with open(vec_file, "w", encoding="utf-8") as f:
-        f.write("3 2\n")  # 3 words, 2 dimensions
-        f.write("word1 1.0 0.0\n")
-        f.write("word2 0.0 1.0\n")
-        f.write("word3 1.0 1.0\n")
-
-
-def test_load_word2vec_model(monkeypatch):
+def test_main_with_mocks(monkeypatch):
+    """Test the main function with mocked dependencies."""
+    from unittest.mock import patch, MagicMock
+    import tibetan_text_metrics.main as main_module
+    from tibetan_text_metrics.main import main
+    
     with tempfile.TemporaryDirectory() as tmpdir:
-        # Set up mock directory structure
-        tmp_path = Path(tmpdir)
-        model_dir = tmp_path / "word2vec" / "藏文-音节"
-        model_dir.mkdir(parents=True)
+        temp_path = Path(tmpdir)
         
-        # Create mock word2vec file
-        create_mock_word2vec_file(model_dir)
+        # Create mock input/output directories
+        input_dir = temp_path / "input_files"
+        input_dir.mkdir()
+        output_dir = temp_path / "output"
+        output_dir.mkdir(exist_ok=True)
+        metrics_dir = output_dir / "metrics"
+        metrics_dir.mkdir(exist_ok=True)
+        pca_dir = output_dir / "pca"
+        pca_dir.mkdir(exist_ok=True)
+        heatmaps_dir = output_dir / "heatmaps"
+        heatmaps_dir.mkdir(exist_ok=True)
         
-        # Patch __file__ to use our temporary directory
-        monkeypatch.setattr(Path, "parent", property(lambda _: tmp_path))
+        # Create a mock text file
+        test_file = input_dir / "test_file.txt"
+        test_file.write_text("This is a test.")
         
-        # Test loading model
-        model = load_word2vec_model()
-        assert isinstance(model, KeyedVectors)
-        assert "word1" in model.key_to_index
-        assert "word2" in model.key_to_index
-        assert "word3" in model.key_to_index
+        # Patch the project root to use our temp directory
+        def mock_project_root(*args, **kwargs):
+            if hasattr(args[0], "name") and args[0].name == "__file__":
+                return temp_path
+            else:
+                return temp_path
+        
+        monkeypatch.setattr(Path, "parent", property(mock_project_root))
+        
+        # Create mock objects and results
+        mock_texts = {"test_file": ("test", ["POS"])}
+        mock_results_df = pd.DataFrame([
+            {
+                'Text Pair': 'Test vs Test', 
+                'Chapter': '1',
+                'Syntactic Distance (POS Level)': 10, 
+                'Normalized Syntactic Distance': 0.5,
+                'Weighted Jaccard Similarity (%)': 70,
+                'LCS Length': 80,
+                'Normalized LCS (%)': 80,
+                'Text Pair Category': 'Category A', 
+                'Chapter Length 1': 100, 
+                'Chapter Length 2': 100
+            }
+        ])
+        
+        # Create mock implementations for all functions
+        mock_read = MagicMock(return_value=mock_texts)
+        mock_analyze = MagicMock(return_value=mock_results_df)
+        mock_save = MagicMock()
+        mock_pca = MagicMock()
+        
+        # Directly patch the functions used in the main module
+        main_module.read_text_files = mock_read
+        main_module.compute_pairwise_analysis_pos = mock_analyze
+        main_module.save_results_and_visualize = mock_save
+        main_module.perform_pca_analysis = mock_pca
+        
+        # Call the main function
+        main()
+        
+        # Verify all the important functions were called
+        mock_read.assert_called_once()
+        mock_analyze.assert_called_once()
+        mock_save.assert_called_once()
+        mock_pca.assert_called_once()
 
 
-def test_load_word2vec_model_cached(monkeypatch):
+def test_main_no_input_files(monkeypatch):
+    """Test the main function when no input files are found."""
+    import tibetan_text_metrics.main as main_module
+    
     with tempfile.TemporaryDirectory() as tmpdir:
-        # Set up mock directory structure
-        tmp_path = Path(tmpdir)
-        model_dir = tmp_path / "word2vec" / "藏文-音节"
-        model_dir.mkdir(parents=True)
+        temp_path = Path(tmpdir)
         
-        # Create mock word2vec file
-        create_mock_word2vec_file(model_dir)
+        # Create input directory but without any files
+        input_dir = temp_path / "input_files"
+        input_dir.mkdir()
         
-        # Patch __file__ to use our temporary directory
-        monkeypatch.setattr(Path, "parent", property(lambda _: tmp_path))
+        # Patch the project root to use our temp directory
+        def mock_project_root(*args, **kwargs):
+            if hasattr(args[0], "name") and args[0].name == "__file__":
+                return temp_path
+            else:
+                return temp_path
         
-        # Load model first time (creates cache)
-        model1 = load_word2vec_model()
+        monkeypatch.setattr(Path, "parent", property(mock_project_root))
         
-        # Load model second time (should use cache)
-        model2 = load_word2vec_model()
-        
-        assert isinstance(model2, KeyedVectors)
-        assert model2.key_to_index == model1.key_to_index
-
-
-def test_load_word2vec_model_missing_file(monkeypatch):
-    with tempfile.TemporaryDirectory() as tmpdir:
-        # Set up mock directory structure without the vec file
-        tmp_path = Path(tmpdir)
-        model_dir = tmp_path / "word2vec" / "藏文-音节"
-        model_dir.mkdir(parents=True)
-        
-        # Need to patch the specific part that finds the project root
-        import tibetan_text_metrics.main as main_module
-        
-        # Mock the project_root calculation to return our temp directory
-        def mock_get_project_root(*args, **kwargs):
-            return tmp_path
-        
-        # Reset cached model to ensure we test the file loading logic
-        if hasattr(load_word2vec_model, "_cached_model"):
-            load_word2vec_model._cached_model = None
-            
-        # Patch the project root function
-        monkeypatch.setattr(Path, "parent", property(mock_get_project_root))
-        
-        # Should raise FileNotFoundError when vec file is missing
+        # Should raise FileNotFoundError when no input files are found
         with pytest.raises(FileNotFoundError):
-            load_word2vec_model()
+            main_module.main()
 
 
 @pytest.mark.skip(reason="Integration test requiring actual input files")

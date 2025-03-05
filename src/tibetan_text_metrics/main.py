@@ -1,13 +1,9 @@
 """Main script for running text analysis."""
 
-import os
 from pathlib import Path
 from typing import Dict, List, Optional
 
 import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
-from gensim.models import KeyedVectors
 
 from .analyzer import compute_pairwise_analysis_pos
 from .pca_visualizer import perform_pca_analysis
@@ -76,46 +72,7 @@ def main() -> None:
     print("Results saved to CSV and visualizations generated in output/")
 
 
-def load_word2vec_model() -> KeyedVectors:
-    """Load word2vec model for Tibetan syllables.
-    
-    This function loads a pre-trained word2vec model for Tibetan syllables
-    from the word2vec directory.
-    
-    Returns:
-        KeyedVectors: Loaded word2vec model
-        
-    Raises:
-        FileNotFoundError: If the word2vec model file is not found
-    """
-    # Static variable to cache the model
-    if not hasattr(load_word2vec_model, "_cached_model"):
-        load_word2vec_model._cached_model = None
-    
-    # Return cached model if available
-    if load_word2vec_model._cached_model is not None:
-        return load_word2vec_model._cached_model
-    
-    # Get the project root directory (two levels up from this file)
-    project_root = Path(__file__).parent.parent.parent
-    
-    # Set the path to the word2vec model
-    model_dir = project_root / "word2vec" / "藏文-音节"
-    vec_file = model_dir / "word2vec_zang_yinjie.vec"
-    
-    if not vec_file.exists():
-        raise FileNotFoundError(
-            f"Word2vec model file not found at {vec_file}. "
-            "Please ensure the model file is present."
-        )
-    
-    # Load the model
-    model = KeyedVectors.load_word2vec_format(str(vec_file), binary=False)
-    
-    # Cache the model
-    load_word2vec_model._cached_model = model
-    
-    return model
+
 
 
 if __name__ == "__main__":

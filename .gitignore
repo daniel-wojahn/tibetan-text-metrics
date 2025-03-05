@@ -36,12 +36,6 @@ output/*
 coverage.xml
 htmlcov/
 
-# Model and cache files
-*.vec
-*.model
-*.pkl
-model_cache*
-
 # Coverage
 .coverage
 coverage.xml

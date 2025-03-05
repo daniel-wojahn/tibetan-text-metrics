@@ -17,12 +17,16 @@ from .pca_core import (
 def perform_pca_analysis(results_df: pd.DataFrame, pca_dir: Path) -> None:
     """Perform PCA analysis on text metrics and visualize results.
     
+    This function creates responsive, interactive visualizations of PCA results.
+    It automatically handles nested directory paths by creating parent directories
+    as needed.
+    
     Args:
         results_df: DataFrame containing pairwise analysis results
-        pca_dir: Directory to save PCA outputs
+        pca_dir: Directory to save PCA outputs (can be a nested directory path)
     """
-    # Make sure PCA directory exists
-    pca_dir.mkdir(exist_ok=True)
+    # Create directory and any parent directories if they don't exist
+    pca_dir.mkdir(parents=True, exist_ok=True)
     
     # Prepare data
     features, metadata = prepare_data_for_pca(results_df)
@@ -356,13 +360,23 @@ def create_interactive_visualization(
             'font': dict(family="Arial, sans-serif", size=16, color="#333333"),
             'standoff': 15
         },
-        # Set fixed axis ranges to make a taller, more vertically stretched plot
-        xaxis=dict(range=[-4, 4]),  # Normal x-axis range
-        yaxis=dict(range=[-3, 3]),  # Wider y-axis range for more vertical stretch
+        # Set dynamic axis ranges that can be overridden by responsive sizing
+        xaxis=dict(
+            range=[-3, 3],
+            constrain='domain'
+        ), 
+        yaxis=dict(
+            range=[-2, 2],
+            scaleanchor="x",
+            scaleratio=1
+        ),  
         hovermode='closest',
         legend_title_text='<b>Text Pairs</b>',
-        width=1400,  # MUCH wider width for a bigger plot
-        height=1200,  # Taller height for better visibility
+        # Make width and height responsive by using 100% values
+        # Default values will be used for non-responsive environments
+        width=1600,
+        height=1200,
+        autosize=True,
         # Do NOT use aspect ratio constraints
         margin=dict(l=60, r=60, t=120, b=100),  # More top margin for title
         legend=dict(y=-0.15, orientation='h', font=dict(size=12)),  # Adjusted legend position
@@ -406,13 +420,16 @@ def create_interactive_visualization(
     <p><em>Hover over any point for details</em></p>
     """
     
+    # Ensure pca_dir exists - handle any nested subdirectories in the path
+    pca_dir.mkdir(parents=True, exist_ok=True)
+    
     # Create a complete custom HTML layout with flexbox
     html_file = pca_dir / 'interactive_pca_visualization.html'
     
-    # Generate just the plotly figure without full HTML
-    plot_div = fig.to_html(include_plotlyjs='cdn', full_html=False)
+    # Generate just the plotly figure without full HTML, set responsive to True
+    plot_div = fig.to_html(include_plotlyjs='cdn', full_html=False, config={'responsive': True})
     
-    # Create a fully custom HTML with side-by-side layout and MUCH bigger plot
+    # Create a fully custom HTML with responsive design
     custom_html = f'''
     <!DOCTYPE html>
     <html>
@@ -422,14 +439,37 @@ def create_interactive_visualization(
         <title>Tibetan Text Similarities: PCA Visualization</title>
         <style>
             body, html {{ margin: 0; padding: 0; font-family: Arial, sans-serif; }}
-            .main-container {{ display: flex; flex-direction: column; width: 100%; max-width: 1800px; margin: 0 auto; }}
-            .container {{ display: flex; flex-direction: row; width: 100%; }}
+            .main-container {{ display: flex; flex-direction: column; width: 100%; margin: 0 auto; }}
+            .container {{ display: flex; flex-direction: row; flex-wrap: wrap; width: 100%; }}
             .explanation {{ flex: 0 0 300px; padding: 20px; }}
-            .plot-container {{ flex: 1; min-width: 1000px; height: 800px; }}
+            .plot-container {{ flex: 1; min-width: 300px; width: 100%; height: 80vh; }}
             h1 {{ font-size: 22px; text-align: center; margin: 15px 0; }}
-            .js-plotly-plot {{ min-height: 750px !important; }}
-            @media (max-width: 1400px) {{ .container {{ flex-direction: column; }} .explanation {{ flex: none; width: auto; }} .plot-container {{ min-width: 95vw; }} }}
+            .js-plotly-plot {{ width: 100% !important; height: 100% !important; }}
+            
+            /* Responsive adaptations */
+            @media (max-width: 1400px) {{ 
+                .container {{ flex-direction: column; }} 
+                .explanation {{ flex: none; width: auto; }} 
+                .plot-container {{ width: 100%; min-height: 80vh; }} 
+            }}
+            @media (max-width: 768px) {{ 
+                .plot-container {{ height: 90vh; }} 
+                body {{ font-size: 14px; }}
+                h1, h2, h3 {{ margin: 10px 0; }}
+            }}
         </style>
+        <!-- Additional script to ensure Plotly is fully responsive -->
+        <script>
+            window.addEventListener('resize', function() {{
+            // Trigger a Plotly resize event when window size changes
+            if (window.Plotly) {{
+                var plotContainers = document.querySelectorAll('.js-plotly-plot');
+                plotContainers.forEach(function(container) {{
+                    Plotly.Plots.resize(container);
+                }});
+            }}
+        }}); 
+        </script>
     </head>
     <body>
         <div class="main-container">
