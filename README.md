@@ -51,7 +51,7 @@ cd tibetan-text-metrics
    ```
 
    **For macOS/Linux:**
-   - I recommend using Python 3.10 or later(Python 3.13 has known issues with gensim dependencies)
+   - Use Python 3.10 or later (Python 3.13 has known issues with gensim dependencies)
    ```bash
    python -m venv .venv
    source .venv/bin/activate
@@ -93,24 +93,29 @@ cd tibetan-text-metrics
    ```cmd
    python -m tibetan_text_metrics.main
    ```
+   Or if you're running from the repo root:
+   ```bash
+   python -m src.tibetan_text_metrics.main
+   ```
    The tool will automatically process all text files in the `input_files` directory. On Windows, this directory will be at `input_files\` relative to your project root.
 
 3. View results:
-   - CSV file with metrics: `output/pos_tagged_analysis.csv`
-   - Heatmap visualizations: `output/heatmap_*.png`
+   - CSV file with metrics: `output/metrics/pos_tagged_analysis.csv`
+   - Heatmap visualizations: `output/heatmaps/`
+   - PCA visualizations: `output/pca/interactive_pca_visualization.html`
 
 ## Output
 
 The tool generates:
 - **CSV files**:
-  - `pos_tagged_analysis.csv`: Complete pairwise analysis with all metrics (both raw and normalized)
-  - `pca_data.csv`: PCA coordinates with normalized metrics for further analysis
-  - `pca_loadings.csv`: Shows how each metric contributes to the principal components
+  - `output/metrics/pos_tagged_analysis.csv`: Complete pairwise analysis with all metrics (both raw and normalized)
+  - `output/pca/pca_data.csv`: PCA coordinates with normalized metrics for further analysis
+  - `output/pca/pca_loadings.csv`: Shows how each metric contributes to the principal components
 
 - **Visualizations**:
-  - Heatmaps for each metric (normalized and raw versions)
-  - Interactive PCA plots showing chapter relationships by text pair and by chapter with explanations
-  - Feature vector projections showing the contribution of each metric to the principal components
+  - `output/heatmaps/`: Heatmaps for each metric (normalized and raw versions)
+  - `output/pca/interactive_pca_visualization.html`: Interactive PCA plots showing chapter relationships by text pair and by chapter with explanations
+  - `output/pca/`: Feature vector projections showing the contribution of each metric to the principal components
 
 For the Weighted Jaccard Similarity metric, you can customize POS tag weights in `metrics.py` to control how different parts of speech affect the similarity score. This allows you to give more weight to content words (nouns, verbs) versus function words, for example.
 
@@ -140,6 +145,8 @@ The PCA visualization can be found in `output/pca/interactive_pca_visualization.
 
 This visualization is particularly useful for identifying which chapters have unusual similarity patterns compared to others.
 
+The PCA analysis is based on the metrics calculated during the pairwise comparison process, providing a holistic view that combines multiple similarity measures into a single visualization.
+
 ## License
 
 This project is licensed under the Creative Commons Attribution 4.0 International License - see the [LICENSE](LICENSE) file for details or visit the [Creative Commons](https://creativecommons.org/licenses/by/4.0/) website.
@@ -154,7 +161,7 @@ If you use this tool in your research, please cite:
   author = {Daniel Wojahn},
   year = {2025},
   url = {https://github.com/daniel-wojahn/tibetan-text-metrics},
-  version = {0.3.0}
+  version = {0.1.0}
 }
 ```
 
