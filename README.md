@@ -3,6 +3,8 @@
 [![codecov](https://codecov.io/gh/daniel-wojahn/tibetan-text-metrics/branch/main/graph/badge.svg)](https://codecov.io/gh/daniel-wojahn/tibetan-text-metrics)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
+[![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/daniel-wojahn/tibetan-text-metrics/graphs/commit-activity)
 
 A Python tool designed to analyze textual similarities and variations in Tibetan manuscripts using multiple computational approaches.
 
@@ -28,8 +30,6 @@ TibetanTextMetrics (TTM) grew out of the challenge of analysing multiple edition
 - **Principal Component Analysis (PCA)**: Provides multi-dimensional visualization of textual relationships, offering a holistic approach to identifying manuscript traditions by combining multiple metrics into an intuitive visual representation.
 
 - **Visualizations**: Generate heatmaps for individual metrics and PCA plots that help identify clusters of similar texts and chapters.
-
-- **Support for POS-tagged Tibetan text analysis**
 
 ## Installation
 
@@ -150,6 +150,17 @@ The PCA analysis is based on the metrics calculated during the pairwise comparis
 ## License
 
 This project is licensed under the Creative Commons Attribution 4.0 International License - see the [LICENSE](LICENSE) file for details or visit the [Creative Commons](https://creativecommons.org/licenses/by/4.0/) website.
+
+## Contributing
+
+Contributions to this project are welcome and appreciated! This is my first open-source repository, and I'm excited to collaborate with others.
+
+Here are some ways you can contribute:
+
+- **Bug reports**: If you find a bug, please open an issue with a clear description and steps to reproduce it
+- **Feature requests**: Have an idea for a new feature? Feel free to suggest it by opening an issue
+- **Code contributions**: Pull requests for bug fixes, features, or documentation improvements are all welcome
+- **Documentation**: Improvements to the documentation, examples, or tutorials are very valuable
 
 ## Citation
 
