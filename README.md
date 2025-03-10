@@ -63,14 +63,8 @@ cd tibetan-text-metrics
    ```bash
    pip install -e .
    ```
-
-   For development, install additional tools:
-   ```bash
-   pip install -e ".[dev]"
-   ```
-
    Development dependencies include:
-   - Testing: pytest with coverage reporting
+   - Testing: pytest
    - Code Quality: black (formatting), isort (import sorting), flake8 (linting)
    - Type Checking: mypy with pandas-stubs
    - Security: bandit
