@@ -26,7 +26,9 @@ TibetanTextMetrics (TTM) grew out of the challenge of analysing multiple edition
 
 - **Weighted Jaccard Similarity**: Measures vocabulary overlap with POS-based weighting (customizable in `metrics.py`), allowing you to emphasize content words like nouns and verbs over function words.
 
-- **Longest Common Subsequence (LCS)**: Identifies shared sequences of words (Cython-optimized, ~196x faster). Both raw counts and normalized percentages (relative to average text length) are provided.
+- **Longest Common Subsequence (LCS)**: Identifies shared sequences of words (Cython-optimized). Both raw counts and normalized percentages (relative to average text length) are provided.
+
+- **Pattern Recognition**: Analyzes n-gram patterns in both words and POS tags (Cython-optimized). Uses cosine similarity to measure pattern usage between texts, with parallel processing for efficiency.
 
 - **Principal Component Analysis (PCA)**: Provides multi-dimensional visualization of textual relationships, offering a holistic approach to identifying manuscript traditions by combining multiple metrics into an intuitive visual representation.
 
@@ -110,11 +112,14 @@ cd tibetan-text-metrics
 The tool generates:
 - **CSV files**:
   - `output/metrics/pos_tagged_analysis.csv`: Complete pairwise analysis with all metrics (both raw and normalized)
+  - `output/metrics/pattern_analysis.csv`: Results of the pattern-based analysis, including word and POS pattern similarities
   - `output/pca/pca_data.csv`: PCA coordinates with normalized metrics for further analysis
   - `output/pca/pca_loadings.csv`: Shows how each metric contributes to the principal components
 
 - **Visualizations**:
   - `output/heatmaps/`: Heatmaps for each metric (normalized and raw versions)
+  - `output/heatmaps/heatmap_pattern_pos_pattern_similarity.png`: Heatmap showing POS pattern similarities between chapters
+  - `output/heatmaps/heatmap_pattern_word_pattern_similarity.png`: Heatmap showing word pattern similarities between chapters
   - `output/pca/interactive_pca_visualization.html`: Interactive PCA plots showing chapter relationships by text pair and by chapter with explanations
   - `output/pca/`: Feature vector projections showing the contribution of each metric to the principal components
 
@@ -128,6 +133,22 @@ Normalization is crucial when comparing chapters of different lengths. For examp
 - Despite the 10x difference in raw values, both represent the same proportional difference (20%)
 
 Normalized metrics address this by scaling values relative to text length, providing fair comparisons that aren't biased by chapter size.
+
+### Interpreting Pattern Similarity Scores
+
+The pattern recognition feature produces similarity scores ranging from 0 to 1:
+
+- **Word Pattern Similarity**: Measures how similarly words are arranged in n-gram patterns.
+  - A score of 1.0 indicates identical word pattern usage
+  - A score of 0.0 indicates no common word patterns
+  - Higher scores suggest texts that use the same sequences of words, possibly indicating shared sources or direct copying
+
+- **POS Pattern Similarity**: Measures how similarly parts of speech are arranged.
+  - A score of 1.0 indicates identical grammatical structures
+  - A score of 0.0 indicates completely different grammatical structures
+  - Higher scores suggest similar writing styles or rhetorical structures, even if different vocabulary is used
+
+These metrics use cosine similarity between n-gram frequency distributions, which makes them naturally normalized regardless of text length. The default n-gram size (3) can be adjusted to focus on shorter or longer patterns.
 
 ### PCA Visualization
 

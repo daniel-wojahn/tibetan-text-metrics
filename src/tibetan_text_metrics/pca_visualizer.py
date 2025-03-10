@@ -123,7 +123,9 @@ def create_interactive_visualization(
     feature_colors = {
         'Normalized Syntactic Distance': '#d62728',    # Red
         'Weighted Jaccard Similarity (%)': '#2ca02c',  # Green
-        'Normalized LCS (%)': '#1f77b4'               # Blue
+        'Normalized LCS (%)': '#1f77b4',              # Blue
+        'POS Pattern Similarity': '#9467bd',           # Purple
+        'Word Pattern Similarity': '#ff7f0e'           # Orange
     }
     
     # Embed feature field labels in the corners of the plot as part of the raster grid
@@ -146,10 +148,18 @@ def create_interactive_visualization(
         elif feature == 'Normalized LCS (%)':
             label_x = 3.5   # Far right corner
             label_y = -2.5  # Bottom right corner
+        # For POS Pattern Similarity
+        elif feature == 'POS Pattern Similarity':
+            label_x = -3.5  # Far left corner
+            label_y = 2.5   # Top left corner
+        # For Word Pattern Similarity
+        elif feature == 'Word Pattern Similarity':
+            label_x = -1.0  # Center
+            label_y = 3.0   # Top center
         else:
             # Fallback positioning
-            label_x = -3.5
-            label_y = 2.5  # Top left corner
+            label_x = 0.0
+            label_y = 0.0  # Center
         
         # Simplify the feature name for display
         if feature == 'Normalized Syntactic Distance':
@@ -158,6 +168,10 @@ def create_interactive_visualization(
             display_name = 'Weighted Jaccard Similarity'
         elif feature == 'Normalized LCS (%)':
             display_name = 'Normalized LCS'
+        elif feature == 'POS Pattern Similarity':
+            display_name = 'POS Pattern Similarity'
+        elif feature == 'Word Pattern Similarity':
+            display_name = 'Word Pattern Similarity'
         else:
             display_name = feature.split('(')[0]
         
@@ -347,6 +361,20 @@ def create_interactive_visualization(
         opacity=0.9
     )
     
+    # Add a legend interaction tip annotation
+    fig.add_annotation(
+        xref="paper", yref="paper",
+        x=0.5, y=1.05,  # Adjusted position to be more visible
+        text="<i>Tip: Click on colored dots in the legend to show/hide specific text pairs</i>",
+        showarrow=False,
+        font=dict(size=12, color="#555555"),
+        bgcolor="rgba(240,240,240,0.8)",
+        bordercolor="#cccccc",
+        borderwidth=1,
+        borderpad=4,
+        opacity=0.95
+    )
+    
     # Update layout with improved styling and better axis proportions
     fig.update_layout(
         title=None,  # Remove the plot title since we already have it in the HTML
@@ -374,11 +402,11 @@ def create_interactive_visualization(
         legend_title_text='<b>Text Pairs</b>',
         # Make width and height responsive by using 100% values
         # Default values will be used for non-responsive environments
-        width=1600,
+        width=1800,
         height=1200,
         autosize=True,
         # Do NOT use aspect ratio constraints
-        margin=dict(l=60, r=60, t=120, b=100),  # More top margin for title
+        margin=dict(l=60, r=60, t=150, b=100),  # Increased top margin for the tip annotation
         legend=dict(y=-0.15, orientation='h', font=dict(size=12)),  # Adjusted legend position
         plot_bgcolor='rgba(240,240,240,0.9)',  # Slightly gray background for better contrast
     )
@@ -387,7 +415,13 @@ def create_interactive_visualization(
     enhanced_explanation = f"""
     <h2>Principal Component Analysis (PCA) Explained</h2>
     <h3>What is PCA?</h3>
-    <p>A technique that combines our three text similarity metrics into two dimensions that we can visualize.</p>
+    <p>A technique that combines our text similarity metrics into two dimensions that we can visualize.</p>
+    
+    <h3>Metrics Included:</h3>
+    <ul>
+        <li><strong>Base Metrics:</strong> Normalized Syntactic Distance, Weighted Jaccard Similarity, Normalized LCS</li>
+        <li><strong>Pattern Metrics:</strong> POS Pattern Similarity, Word Pattern Similarity</li>
+    </ul>
     
     <h3>How PCA Actually Finds Patterns:</h3>
     <ol>
@@ -397,24 +431,34 @@ def create_interactive_visualization(
         <li><strong>Projects</strong> the data onto these new directions</li>
     </ol>
     
+    <h3>What "Variance Explained" Means:</h3>
+    <p>The percentage of the original information captured by each principal component:</p>
+    <ul>
+        <li><strong>PC1: {explained_variance[0]:.1%}</strong> - This first dimension captures {explained_variance[0]:.1%} of the total variance in the data</li>
+        <li><strong>PC2: {explained_variance[1]:.1%}</strong> - This second dimension captures {explained_variance[1]:.1%} of the remaining patterns</li>
+        <li><strong>Total: {sum(explained_variance):.1%}</strong> - Together, these two dimensions preserve {sum(explained_variance):.1%} of the information from all metrics</li>
+    </ul>
+    
     <p><em>For our text metrics:</em></p>
     <ul>
-        <li>When texts are similar, Jaccard and LCS are high while Syntactic Distance is low</li>
-        <li>PC1 ({explained_variance[0]:.1%} of variance) captures this primary relationship</li>
-        <li>PC2 ({explained_variance[1]:.1%} of variance) captures secondary patterns where metrics disagree</li>
+        <li>When texts are similar, similarity metrics are high while distance metrics are low</li>
+        <li>PC1 captures the primary relationship between these metrics</li>
+        <li>PC2 captures secondary patterns where metrics disagree</li>
+        <li>Pattern metrics add new dimensions of analysis based on n-gram sequences</li>
     </ul>
     
     <h3>How to Read This Plot:</h3>
     <ul>
-        <li><strong>Right side</strong>: Jaccard and LCS are high, Syntactic Distance is low (similar texts)</li>
-        <li><strong>Left side</strong>: Jaccard and LCS are low, Syntactic Distance is high (different texts)</li>
-        <li><strong>Vertical position</strong>: Captures subtler differences between metrics</li>
+        <li><strong>Right side:</strong> Higher similarity (Jaccard, LCS, Pattern Similarity)</li>
+        <li><strong>Left side:</strong> Higher distance (Syntactic Distance)</li>
+        <li><strong>Vertical position:</strong> Captures subtler differences between metrics</li>
+        <li><strong>Legend interaction:</strong> Click on colored dots in the legend to show/hide specific text pairs</li>
     </ul>
     
     <h3>The Colored Circles:</h3>
     <ul>
-        <li><strong>Orange circle</strong>: The main cluster where most text comparisons fall (normal similarity patterns)</li>
-        <li><strong>Teal circle</strong>: Outlier texts where metrics show unusual or contradictory patterns</li>
+        <li><strong>Orange circle:</strong> The main cluster where most text comparisons fall (normal similarity patterns)</li>
+        <li><strong>Teal circle:</strong> Outlier texts where metrics show unusual or contradictory patterns</li>
     </ul>
     
     <p><em>Hover over any point for details</em></p>
@@ -441,15 +485,17 @@ def create_interactive_visualization(
             body, html {{ margin: 0; padding: 0; font-family: Arial, sans-serif; }}
             .main-container {{ display: flex; flex-direction: column; width: 100%; margin: 0 auto; }}
             .container {{ display: flex; flex-direction: row; flex-wrap: wrap; width: 100%; }}
-            .explanation {{ flex: 0 0 300px; padding: 20px; }}
+            .explanation {{ flex: 0 0 330px; padding: 20px; font-size: 13px; }}  /* Increased width by 30px and reduced font size */
             .plot-container {{ flex: 1; min-width: 300px; width: 100%; height: 80vh; }}
             h1 {{ font-size: 22px; text-align: center; margin: 15px 0; }}
+            h2 {{ font-size: 18px; }} /* Reduced heading sizes */
+            h3 {{ font-size: 15px; }}
             .js-plotly-plot {{ width: 100% !important; height: 100% !important; }}
             
             /* Responsive adaptations */
             @media (max-width: 1400px) {{ 
                 .container {{ flex-direction: column; }} 
-                .explanation {{ flex: none; width: auto; }} 
+                .explanation {{ flex: none; width: auto; font-size: 14px; }} /* Restore font size on small screens */
                 .plot-container {{ width: 100%; min-height: 80vh; }} 
             }}
             @media (max-width: 768px) {{ 

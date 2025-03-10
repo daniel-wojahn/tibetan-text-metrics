@@ -9,6 +9,7 @@ dist/
 
 # Cython generated files
 *.c
+*.cpp
 *.html
 
 # Virtual Environment

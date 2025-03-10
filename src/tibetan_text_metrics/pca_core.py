@@ -19,11 +19,22 @@ def prepare_data_for_pca(results_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Dat
     metadata = results_df[['Text Pair', 'Chapter', 'Chapter Length 1', 'Chapter Length 2']]
     
     # Select numeric features for PCA
-    features = results_df[[
+    # Check if the pattern metrics exist in the DataFrame
+    pattern_metrics = ['POS Pattern Similarity', 'Word Pattern Similarity']
+    available_metrics = [m for m in pattern_metrics if m in results_df.columns]
+    
+    # Base metrics always included
+    base_metrics = [
         'Normalized Syntactic Distance',
         'Weighted Jaccard Similarity (%)',
         'Normalized LCS (%)'
-    ]]
+    ]
+    
+    # Combine base metrics with any available pattern metrics
+    selected_metrics = base_metrics + available_metrics
+    
+    # Select features for PCA
+    features = results_df[selected_metrics]
     
     return features, metadata
 
