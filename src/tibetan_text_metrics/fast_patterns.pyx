@@ -65,7 +65,18 @@ cdef class FastPatternAnalyzer:
         return dot_product / (sqrt(norm1) * sqrt(norm2))
 
     def analyze_chapter_pair(self, words1, pos1, words2, pos2, n_gram_size=3):
-        """Instance method to analyze a pair of chapters."""
+        """Instance method to analyze a pair of chapters.
+        
+        Args:
+            words1: List of words from first text
+            pos1: List of POS tags from first text
+            words2: List of words from second text
+            pos2: List of POS tags from second text
+            n_gram_size: Size of n-grams to use for pattern analysis (default: 3)
+            
+        Returns:
+            Dict containing similarity scores and pattern counts
+        """
         word_patterns1 = self.extract_ngrams(words1, n_gram_size)
         word_patterns2 = self.extract_ngrams(words2, n_gram_size)
         pos_patterns1 = self.extract_ngrams(pos1, n_gram_size)
@@ -77,6 +88,8 @@ cdef class FastPatternAnalyzer:
         return {
             "POS Pattern Similarity": pos_sim,
             "Word Pattern Similarity": word_sim,
-            "Unique POS Patterns": len(pos_patterns1),
-            "Unique Word Patterns": len(word_patterns1)
+            "Unique POS Patterns Text 1": len(pos_patterns1),
+            "Unique POS Patterns Text 2": len(pos_patterns2),
+            "Unique Word Patterns Text 1": len(word_patterns1),
+            "Unique Word Patterns Text 2": len(word_patterns2)
         }

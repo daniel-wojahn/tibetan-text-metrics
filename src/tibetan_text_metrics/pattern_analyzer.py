@@ -17,12 +17,12 @@ def process_single_pair(args):
     
     Args:
         args: A tuple containing:
-            file1_stem, file2_stem, chapter_idx, chapter1, chapter2
+            file1_stem, file2_stem, chapter_idx, chapter1, chapter2, n_gram_size
         
     Returns:
         dict: The results of similarity calculations, including metadata.
     """
-    file1_stem, file2_stem, chapter_idx, chapter1, chapter2 = args
+    file1_stem, file2_stem, chapter_idx, chapter1, chapter2, n_gram_size = args
 
     # Create a new analyzer instance
     analyzer = FastPatternAnalyzer()
@@ -31,8 +31,8 @@ def process_single_pair(args):
     words1, pos1 = extract_words_and_pos(chapter1)
     words2, pos2 = extract_words_and_pos(chapter2)
 
-    # Get the analysis results
-    results = analyzer.analyze_chapter_pair(words1, pos1, words2, pos2)
+    # Get the analysis results with specified n-gram size
+    results = analyzer.analyze_chapter_pair(words1, pos1, words2, pos2, n_gram_size=n_gram_size)
 
     # Add metadata to results
     results["Text Pair"] = f"{file1_stem} vs {file2_stem}"
@@ -101,7 +101,7 @@ def compute_pattern_metrics(
             chapters2 = texts[file2_stem]
 
             for chapter_idx, (chapter1, chapter2) in enumerate(zip(chapters1, chapters2)):
-                tasks.append((file1_stem, file2_stem, chapter_idx, chapter1, chapter2))
+                tasks.append((file1_stem, file2_stem, chapter_idx, chapter1, chapter2, n_gram_size))
 
     # Process tasks in parallel
     results = []
@@ -111,7 +111,7 @@ def compute_pattern_metrics(
     return pd.DataFrame(results)
 
 
-def visualize_pattern_analysis(pattern_df: pd.DataFrame, heatmaps_dir: Path, n_gram_size: int = 3) -> None:
+def visualize_pattern_analysis(pattern_df: pd.DataFrame, heatmaps_dir: Path, n_gram_size: int = 4) -> None:
     """
     Generate visualizations for pattern analysis results.
 

@@ -44,7 +44,7 @@ def perform_pca_analysis(results_df: pd.DataFrame, pca_dir: Path) -> None:
     pca_df = pd.concat([pca_df, metadata.reset_index(drop=True)], axis=1)
     
     # Identify clusters and outliers
-    pca_df, outliers = identify_clusters_and_outliers(pca_df)
+    pca_df, _ = identify_clusters_and_outliers(pca_df)
     
     # Prepare feature vectors data
     feature_loadings = prepare_feature_vectors(features, loadings)
@@ -55,8 +55,7 @@ def perform_pca_analysis(results_df: pd.DataFrame, pca_dir: Path) -> None:
         feature_loadings=feature_loadings,
         features=features,
         explained_variance=explained_variance,
-        pca_dir=pca_dir,
-        outliers=outliers
+        pca_dir=pca_dir
     )
 
 
@@ -65,8 +64,7 @@ def create_interactive_visualization(
     feature_loadings: pd.DataFrame,
     features: pd.DataFrame,
     explained_variance: List[float],
-    pca_dir: Path,
-    outliers: Optional[pd.DataFrame] = None
+    pca_dir: Path
 ) -> None:
     """Create an interactive PCA visualization.
     
@@ -195,20 +193,23 @@ def create_interactive_visualization(
         )
     
     # Create clusters to visually group data
+    # Extract outliers from pca_df
+    outliers = pca_df[pca_df['Is_Outlier']].copy()
+    
     # Group outliers into regions instead of individual highlights
-    if outliers is not None and len(outliers) > 0:
+    if len(outliers) > 0:
         # Use simple clustering approach to group outliers into maximum 4 regions
         from sklearn.cluster import KMeans
         
-        # If we have very few outliers, just group them into 1 or 2 clusters
-        n_clusters = min(4, len(outliers))
+        # For small number of outliers, use fewer clusters
+        n_clusters = min(2, len(outliers)) if len(outliers) < 4 else min(3, len(outliers))
         
         # Only use KMeans if we have enough points
         if len(outliers) >= n_clusters:
             # Extract PCA coordinates for clustering
             outlier_coords = outliers[['Principal Component 1', 'Principal Component 2']].values
             
-            # Cluster the outliers
+            # Fit KMeans to outlier points
             kmeans = KMeans(n_clusters=n_clusters, random_state=42)
             cluster_labels = kmeans.fit_predict(outlier_coords)
             
@@ -295,71 +296,119 @@ def create_interactive_visualization(
                 opacity=0.9
             )
     
-    # Add large ellipse to indicate the main cluster
-    main_cluster_x0, main_cluster_y0 = -1, -1
-    main_cluster_x1, main_cluster_y1 = 2, 1.5
-    main_cluster_center_x = (main_cluster_x0 + main_cluster_x1) / 2
-    main_cluster_center_y = (main_cluster_y0 + main_cluster_y1) / 2
+    # Analyze data distribution to determine if we need cluster regions
+    from sklearn.cluster import KMeans
+    from sklearn.metrics import silhouette_score
     
-    fig.add_shape(
-        type="circle",
-        xref="x",
-        yref="y",
-        x0=main_cluster_x0,
-        y0=main_cluster_y0,
-        x1=main_cluster_x1,
-        y1=main_cluster_y1,
-        fillcolor="rgba(255, 165, 0, 0.1)",  # Orange with transparency
-        line=dict(color="orange", width=1, dash="dash"),
-        name="Main Cluster Region"
-    )
+    # Get all points excluding outliers
+    non_outliers = pca_df[~pca_df['Is_Outlier']]
+    coords = non_outliers[['Principal Component 1', 'Principal Component 2']].values
     
-    # Add label for main cluster
-    fig.add_annotation(
-        x=main_cluster_center_x,
-        y=main_cluster_y1 + 0.2,
-        text="<b>Main Cluster</b>",
-        showarrow=False,
-        font=dict(color="#ff8c00", size=12),  # Dark orange
-        bgcolor="white",
-        bordercolor="orange",
-        borderwidth=1,
-        borderpad=3,
-        opacity=0.9
-    )
-    
-    # Add light green region for the secondary cluster if any patterns emerge
-    secondary_cluster_x0, secondary_cluster_y0 = -2.5, -1.5
-    secondary_cluster_x1, secondary_cluster_y1 = -0.5, 1.5
-    secondary_cluster_center_x = (secondary_cluster_x0 + secondary_cluster_x1) / 2
-    secondary_cluster_center_y = (secondary_cluster_y0 + secondary_cluster_y1) / 2
-    
-    fig.add_shape(
-        type="circle",
-        xref="x",
-        yref="y",
-        x0=secondary_cluster_x0,
-        y0=secondary_cluster_y0,
-        x1=secondary_cluster_x1,
-        y1=secondary_cluster_y1,
-        fillcolor="rgba(144, 238, 144, 0.1)",  # Light green with transparency
-        line=dict(color="lightgreen", width=1, dash="dash"),
-        name="Secondary Cluster Region"
-    )
-    
-    # Add label for secondary cluster
-    fig.add_annotation(
-        x=secondary_cluster_center_x,
-        y=secondary_cluster_y1 + 0.2,
-        text="<b>Secondary Cluster</b>",
-        showarrow=False,
-        font=dict(color="green", size=12),
-        bgcolor="white",
-        bordercolor="lightgreen",
-        borderwidth=1,
-        borderpad=3,
-        opacity=0.9
-    )
+    # Only try clustering if we have enough points
+    if len(coords) >= 4:
+        # Try clustering with 2 clusters
+        kmeans = KMeans(n_clusters=2, random_state=42)
+        cluster_labels = kmeans.fit_predict(coords)
+        
+        # Calculate silhouette score to determine if clusters are well-separated
+        sil_score = silhouette_score(coords, cluster_labels) if len(set(cluster_labels)) > 1 else 0
+        
+        # Only show clusters if they are well-separated (silhouette score > 0.3)
+        if sil_score > 0.3:
+            # Get points for each cluster
+            cluster_points = [non_outliers[cluster_labels == i] for i in range(2)]
+            
+            # Sort clusters by size (main cluster should be larger)
+            cluster_points.sort(key=len, reverse=True)
+            
+            # Add regions for both clusters
+            for i, points in enumerate(cluster_points):
+                # Calculate region bounds with padding
+                x_min, x_max = points['Principal Component 1'].min(), points['Principal Component 1'].max()
+                y_min, y_max = points['Principal Component 2'].min(), points['Principal Component 2'].max()
+                
+                # Add padding proportional to the cluster size
+                padding = 0.2 + (0.1 * len(points) / len(non_outliers))
+                
+                x0 = x_min - padding
+                y0 = y_min - padding
+                x1 = x_max + padding
+                y1 = y_max + padding
+                center_x = (x0 + x1) / 2
+                center_y = (y0 + y1) / 2
+                
+                # Style based on cluster type
+                if i == 0:  # Main cluster
+                    color = "orange"
+                    fill_color = "rgba(255, 165, 0, 0.1)"
+                    label = "Main Cluster"
+                else:  # Secondary cluster
+                    color = "lightgreen"
+                    fill_color = "rgba(144, 238, 144, 0.1)"
+                    label = "Secondary Cluster"
+                
+                # Add cluster region
+                fig.add_shape(
+                    type="circle",
+                    xref="x",
+                    yref="y",
+                    x0=x0,
+                    y0=y0,
+                    x1=x1,
+                    y1=y1,
+                    fillcolor=fill_color,
+                    line=dict(color=color, width=1, dash="dash"),
+                    name=f"{label} Region"
+                )
+                
+                # Add label
+                fig.add_annotation(
+                    x=center_x,
+                    y=y1 + 0.2,
+                    text=f"<b>{label}</b>",
+                    showarrow=False,
+                    font=dict(color=color, size=12),
+                    bgcolor="white",
+                    bordercolor=color,
+                    borderwidth=1,
+                    borderpad=3,
+                    opacity=0.9
+                )
+        else:
+            # If clusters aren't well-separated, just show one main region
+            padding = 0.3
+            x0 = non_outliers['Principal Component 1'].min() - padding
+            y0 = non_outliers['Principal Component 2'].min() - padding
+            x1 = non_outliers['Principal Component 1'].max() + padding
+            y1 = non_outliers['Principal Component 2'].max() + padding
+            center_x = (x0 + x1) / 2
+            center_y = (y0 + y1) / 2
+            
+            fig.add_shape(
+                type="circle",
+                xref="x",
+                yref="y",
+                x0=x0,
+                y0=y0,
+                x1=x1,
+                y1=y1,
+                fillcolor="rgba(255, 165, 0, 0.1)",
+                line=dict(color="orange", width=1, dash="dash"),
+                name="Main Region"
+            )
+            
+            fig.add_annotation(
+                x=center_x,
+                y=y1 + 0.2,
+                text="<b>Main Cluster</b>",
+                showarrow=False,
+                font=dict(color="#ff8c00", size=12),
+                bgcolor="white",
+                bordercolor="orange",
+                borderwidth=1,
+                borderpad=3,
+                opacity=0.9
+            )
     
     # Add a legend interaction tip annotation
     fig.add_annotation(
@@ -375,30 +424,32 @@ def create_interactive_visualization(
         opacity=0.95
     )
     
+    # Update layout with improved styling
+    
     # Update layout with improved styling and better axis proportions
     fig.update_layout(
         title=None,  # Remove the plot title since we already have it in the HTML
         xaxis_title={
             'text': f'Principal Component 1 ({explained_variance[0]:.2%} variance explained)',
-            'font': dict(family="Arial, sans-serif", size=16, color="#333333"),
+            'font': dict(family="Arial, sans-serif", size=14, color="#333333"),
             'standoff': 15
         },
         yaxis_title={
             'text': f'Principal Component 2 ({explained_variance[1]:.2%} variance explained)',
-            'font': dict(family="Arial, sans-serif", size=16, color="#333333"),
+            'font': dict(family="Arial, sans-serif", size=14, color="#333333"),
             'standoff': 15
         },
-        # Set dynamic axis ranges that can be overridden by responsive sizing
         xaxis=dict(
-            range=[-3, 3],
+            range=[-4, 4],  # Slightly wider range
             constrain='domain'
         ), 
         yaxis=dict(
-            range=[-2, 2],
+            range=[-3, 3],  # Slightly wider range
             scaleanchor="x",
             scaleratio=1
-        ),  
+        ),
         hovermode='closest',
+        showlegend=True,
         legend_title_text='<b>Text Pairs</b>',
         # Make width and height responsive by using 100% values
         # Default values will be used for non-responsive environments

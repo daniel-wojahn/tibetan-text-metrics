@@ -1,6 +1,5 @@
 # Tibetan Text Metrics (TTM)
 
-[![codecov](https://codecov.io/gh/daniel-wojahn/tibetan-text-metrics/branch/main/graph/badge.svg)](https://codecov.io/gh/daniel-wojahn/tibetan-text-metrics)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14992358.svg)](https://doi.org/10.5281/zenodo.14992358)
@@ -30,7 +29,7 @@ TibetanTextMetrics (TTM) grew out of the challenge of analysing multiple edition
 
 - **Pattern Recognition**: Analyzes n-gram patterns in both words and POS tags (Cython-optimized). Uses cosine similarity to measure pattern usage between texts, with parallel processing for efficiency.
 
-- **Principal Component Analysis (PCA)**: Provides multi-dimensional visualization of textual relationships, offering a holistic approach to identifying manuscript traditions by combining multiple metrics into an intuitive visual representation.
+- **Principal Component Analysis (PCA)**: Provides multi-dimensional visualization of textual relationships, combining multiple metrics into an intuitive visual representation. Features adaptive cluster detection, outlier identification using Median Absolute Deviation (MAD), and dynamic region visualization based on data distribution.
 
 - **Visualizations**: Generate heatmaps for individual metrics and PCA plots that help identify clusters of similar texts and chapters.
 
@@ -100,7 +99,15 @@ cd tibetan-text-metrics
    ```bash
    python -m src.tibetan_text_metrics.main
    ```
-   The tool will automatically process all text files in the `input_files` directory. On Windows, this directory will be at `input_files\` relative to your project root.
+   The tool will prompt you to select an n-gram size for pattern analysis:
+   - **n=2 (Bigrams)**: Best for finding common word pairs and basic phrases
+   - **n=3 (Trigrams)**: Default, good balance of specificity and coverage
+   - **n=4 (4-grams)**: Better for identifying recurring expressions
+   - **n=5 (5-grams)**: Best for finding exact repeated passages
+   
+   Choose based on your analysis needs - larger n-grams are better for finding specific textual parallels, while smaller n-grams help identify general structural similarities.
+   
+   The tool will then process all text files in the `input_files` directory. On Windows, this directory will be at `input_files\` relative to your project root.
 
 3. View results:
    - CSV file with metrics: `output/metrics/pos_tagged_analysis.csv`
@@ -120,8 +127,12 @@ The tool generates:
   - `output/heatmaps/`: Heatmaps for each metric (normalized and raw versions)
   - `output/heatmaps/heatmap_pattern_pos_pattern_similarity.png`: Heatmap showing POS pattern similarities between chapters
   - `output/heatmaps/heatmap_pattern_word_pattern_similarity.png`: Heatmap showing word pattern similarities between chapters
-  - `output/pca/interactive_pca_visualization.html`: Interactive PCA plots showing chapter relationships by text pair and by chapter with explanations
-  - `output/pca/`: Feature vector projections showing the contribution of each metric to the principal components
+  - `output/pca/interactive_pca_visualization.html`: Interactive PCA plots showing:
+    - Chapter relationships by text pair and chapter
+    - Adaptive cluster regions based on data distribution
+    - Outliers identified using robust statistical methods
+    - Feature vector projections showing metric contributions
+    - Dynamic visualization that adjusts to show single or multiple clusters based on data separation
 
 For the Weighted Jaccard Similarity metric, you can customize POS tag weights in `metrics.py` to control how different parts of speech affect the similarity score. This allows you to give more weight to content words (nouns, verbs) versus function words, for example.
 
@@ -148,7 +159,19 @@ The pattern recognition feature produces similarity scores ranging from 0 to 1:
   - A score of 0.0 indicates completely different grammatical structures
   - Higher scores suggest similar writing styles or rhetorical structures, even if different vocabulary is used
 
-These metrics use cosine similarity between n-gram frequency distributions, which makes them naturally normalized regardless of text length. The default n-gram size (3) can be adjusted to focus on shorter or longer patterns.
+These metrics use cosine similarity between n-gram frequency distributions, which makes them naturally normalized regardless of text length.
+
+### Understanding PCA Visualization
+
+The PCA visualization includes several advanced features:
+
+- **Adaptive Clustering**: Uses silhouette analysis to determine if the data naturally forms distinct clusters. When clusters are well-separated (silhouette score > 0.3), shows both main and secondary cluster regions. Otherwise, displays a single main cluster region.
+
+- **Outlier Detection**: Uses Median Absolute Deviation (MAD) with a threshold of 1.5 to identify significant outliers while being robust against extreme values. This statistical approach helps highlight truly notable deviations in the data.
+
+- **Dynamic Regions**: Cluster regions automatically adapt to the actual shape and distribution of your data, with padding proportional to cluster size. This ensures the visualization accurately represents the underlying data structure.
+
+- **Feature Vectors**: Shows how different metrics (syntactic distance, Jaccard similarity, etc.) contribute to the principal components, helping you understand which aspects of textual similarity are most important for distinguishing between texts. The default n-gram size (3) can be adjusted to focus on shorter or longer patterns.
 
 ### PCA Visualization
 

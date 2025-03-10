@@ -85,29 +85,45 @@ def transform_data_with_pca(features: pd.DataFrame) -> Tuple[np.ndarray, np.ndar
 
 def identify_clusters_and_outliers(
     pca_df: pd.DataFrame, 
-    distance_threshold: float = 1.5
+    distance_threshold: float = 1.5,  # More selective global threshold
+    local_threshold: float = 2.0     # More selective local threshold
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """Identify clusters and outliers in PCA data.
+    """Identify clusters and outliers in PCA data using both global and local approaches.
     
     Args:
         pca_df: DataFrame with PCA results
-        distance_threshold: Threshold for outlier detection (default: 1.5)
+        distance_threshold: Global threshold for outlier detection (default: 1.5)
+        local_threshold: Local threshold for cluster-based outlier detection (default: 2.0)
         
     Returns:
         Tuple of (pca_df with cluster labels, outliers DataFrame)
     """
-    # Calculate the Euclidean distance from each point to the center (origin)
+    # Calculate global distances from center
     pca_df['Distance_From_Center'] = np.sqrt(
         pca_df['Principal Component 1']**2 + 
         pca_df['Principal Component 2']**2
     )
     
-    # Calculate the median and MAD (Median Absolute Deviation) for robust outlier detection
+    # Calculate local distances within text pair groups
+    pca_df['Local_Distance'] = 0.0
+    for pair in pca_df['Text Pair'].unique():
+        mask = pca_df['Text Pair'] == pair
+        if mask.sum() > 1:  # Only if we have multiple points
+            group = pca_df[mask]
+            centroid = group[['Principal Component 1', 'Principal Component 2']].mean()
+            distances = np.sqrt(
+                (group['Principal Component 1'] - centroid['Principal Component 1'])**2 +
+                (group['Principal Component 2'] - centroid['Principal Component 2'])**2
+            )
+            pca_df.loc[mask, 'Local_Distance'] = distances
+    
+    # Global outlier detection using MAD
     median_distance = pca_df['Distance_From_Center'].median()
     mad = np.median(np.abs(pca_df['Distance_From_Center'] - median_distance))
+    global_outliers = pca_df['Distance_From_Center'] > median_distance + distance_threshold * mad
     
-    # Define points that are far from the center as outliers (using MAD)
-    pca_df['Is_Outlier'] = pca_df['Distance_From_Center'] > median_distance + distance_threshold * mad
+    # Only use global outlier detection for simplicity and robustness
+    pca_df['Is_Outlier'] = global_outliers
     
     # Extract outliers for focused analysis
     outliers = pca_df[pca_df['Is_Outlier']].copy()

@@ -113,11 +113,47 @@ def main(n_gram_size: int = 3) -> None:
     
     print("\nResults saved to CSV and visualizations generated in output/")
 
-if __name__ == "__main__":
-    # Parse command line arguments
-    parser = argparse.ArgumentParser(description="Run Tibetan text metrics analysis")
-    parser.add_argument("--ngram", type=int, default=3, help="Size of n-grams for pattern analysis (default: 3)")
-    args = parser.parse_args()
+def get_valid_ngram_size() -> int:
+    """Prompt the user for a valid n-gram size.
     
-    print(f"Running analysis with n-gram size: {args.ngram}")
-    main(n_gram_size=args.ngram)
+    Returns:
+        int: The chosen n-gram size (between 1 and 5)
+    """
+    while True:
+        try:
+            print("\n" + "=" * 60)
+            print("Tibetan Text Metrics - Pattern Analysis Configuration")
+            print("=" * 60)
+            print("\nWorking directory: " + str(Path.cwd()))
+            print("\nPlease choose the n-gram size for pattern analysis:")
+            print("\nOptions:")
+            print("  2: Bigrams - Best for finding common word pairs and basic phrases")
+            print("  3: Trigrams - Default, good balance of specificity and coverage")
+            print("  4: 4-grams - Better for identifying recurring expressions")
+            print("  5: 5-grams - Best for finding exact repeated passages")
+            
+            print("\nRecommendations:")
+            print("- Use n=2 to find general structural similarities")
+            print("- Use n=3 for a good balance (recommended for most analyses)")
+            print("- Use n=4 or 5 to identify specific textual parallels")
+            print("\nNote: Single word/tag comparisons are covered by other metrics.")
+            
+            choice = input("\nEnter your choice (2-5) [3]: ").strip()
+            
+            # Default to 3 if no input provided
+            if not choice:
+                return 3
+                
+            n_gram_size = int(choice)
+            if 2 <= n_gram_size <= 5:
+                return n_gram_size
+            else:
+                print("\nError: Please enter a number between 2 and 5.")
+        except ValueError:
+            print("\nError: Please enter a valid number.")
+
+if __name__ == "__main__":
+    # Get n-gram size from user
+    n_gram_size = get_valid_ngram_size()
+    print(f"\nRunning analysis with n-gram size: {n_gram_size}")
+    main(n_gram_size=n_gram_size)
