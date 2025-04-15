@@ -1,10 +1,9 @@
 """Functions for computing text similarity metrics."""
 
 from collections import Counter
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Tuple
 
 import numpy as np
-from gensim.models import KeyedVectors
 from rapidfuzz.distance import Levenshtein
 
 try:
@@ -13,20 +12,6 @@ try:
     USE_CYTHON = True
 except ImportError:
     USE_CYTHON = False
-
-
-def compute_syntactic_distance(pos_seq1: List[str], pos_seq2: List[str]) -> float:
-    """Compute syntactic distance using Levenshtein distance.
-
-    Args:
-        pos_seq1: First list of POS tags
-        pos_seq2: Second list of POS tags
-
-    Returns:
-        Levenshtein distance between tag sequences as a float
-    """
-    # Convert sequences to tuples for Levenshtein distance and cast result to float
-    return float(Levenshtein.distance(tuple(pos_seq1), tuple(pos_seq2)))
 
 
 def compute_normalized_syntactic_distance(pos_seq1: List[str], pos_seq2: List[str]) -> float:
@@ -44,7 +29,7 @@ def compute_normalized_syntactic_distance(pos_seq1: List[str], pos_seq2: List[st
     if not pos_seq1 and not pos_seq2:
         return 0.0
         
-    distance = compute_syntactic_distance(pos_seq1, pos_seq2)
+    distance = float(Levenshtein.distance(tuple(pos_seq1), tuple(pos_seq2)))
     max_length = max(len(pos_seq1), len(pos_seq2))
     
     if max_length == 0:
@@ -123,27 +108,6 @@ def compute_weighted_jaccard(
     return intersection_weight / union_weight if union_weight > 0 else 0.0
 
 
-def compute_lcs(
-    words1: List[str], pos_tags1: List[str], words2: List[str], pos_tags2: List[str]
-) -> int:
-    """Compute length of longest common subsequence between two texts."""
-    if USE_CYTHON:
-        return compute_lcs_fast(words1, words2)
-
-    # Fallback to pure Python implementation
-    m, n = len(words1), len(words2)
-    dp = np.zeros((m + 1, n + 1), dtype=np.int32)
-
-    for i in range(1, m + 1):
-        for j in range(1, n + 1):
-            if words1[i - 1] == words2[j - 1]:
-                dp[i, j] = dp[i - 1, j - 1] + 1
-            else:
-                dp[i, j] = max(dp[i - 1, j], dp[i, j - 1])
-
-    return int(dp[m, n])
-
-
 def compute_normalized_lcs(
     words1: List[str], pos_tags1: List[str], words2: List[str], pos_tags2: List[str]
 ) -> float:
@@ -160,7 +124,22 @@ def compute_normalized_lcs(
     Returns:
         float: Normalized LCS value between 0 and 1
     """
-    lcs_length = compute_lcs(words1, pos_tags1, words2, pos_tags2)
+    if USE_CYTHON:
+        lcs_length = compute_lcs_fast(words1, words2)
+    else:
+        # Fallback to pure Python implementation
+        m, n = len(words1), len(words2)
+        dp = np.zeros((m + 1, n + 1), dtype=np.int32)
+
+        for i in range(1, m + 1):
+            for j in range(1, n + 1):
+                if words1[i - 1] == words2[j - 1]:
+                    dp[i, j] = dp[i - 1, j - 1] + 1
+                else:
+                    dp[i, j] = max(dp[i - 1, j], dp[i, j - 1])
+
+        lcs_length = int(dp[m, n])
+    
     avg_length = (len(words1) + len(words2)) / 2
     
     if avg_length == 0:

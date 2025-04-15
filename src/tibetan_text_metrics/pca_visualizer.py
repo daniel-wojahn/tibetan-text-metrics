@@ -462,18 +462,18 @@ def create_interactive_visualization(
         plot_bgcolor='rgba(240,240,240,0.9)',  # Slightly gray background for better contrast
     )
     
-    # Create enhanced explanation for the PCA
+    # Create  explanation for the PCA
     enhanced_explanation = f"""
     <h2>Principal Component Analysis (PCA) Explained</h2>
     <h3>What is PCA?</h3>
     <p>A technique that combines our text similarity metrics into two dimensions that we can visualize.</p>
-    
     <h3>Metrics Included:</h3>
     <ul>
-        <li><strong>Base Metrics:</strong> Normalized Syntactic Distance, Weighted Jaccard Similarity, Normalized LCS</li>
-        <li><strong>Pattern Metrics:</strong> POS Pattern Similarity, Word Pattern Similarity</li>
+        <li><strong>Distance metric:</strong> Normalized Syntactic Distance</li>
+        <li><strong>Lexical similarity:</strong> Weighted Jaccard Similarity</li>
+        <li><strong>Structural similarity:</strong> Normalized LCS, POS Pattern Similarity, Word Pattern Similarity</li>
     </ul>
-    
+
     <h3>How PCA Actually Finds Patterns:</h3>
     <ol>
         <li><strong>Standardizes</strong> all metrics to the same scale</li>
@@ -481,15 +481,12 @@ def create_interactive_visualization(
         <li><strong>Identifies directions</strong> of maximum variance</li>
         <li><strong>Projects</strong> the data onto these new directions</li>
     </ol>
-    
     <h3>What "Variance Explained" Means:</h3>
-    <p>The percentage of the original information captured by each principal component:</p>
     <ul>
         <li><strong>PC1: {explained_variance[0]:.1%}</strong> - This first dimension captures {explained_variance[0]:.1%} of the total variance in the data</li>
         <li><strong>PC2: {explained_variance[1]:.1%}</strong> - This second dimension captures {explained_variance[1]:.1%} of the remaining patterns</li>
         <li><strong>Total: {sum(explained_variance):.1%}</strong> - Together, these two dimensions preserve {sum(explained_variance):.1%} of the information from all metrics</li>
     </ul>
-    
     <p><em>For our text metrics:</em></p>
     <ul>
         <li>When texts are similar, similarity metrics are high while distance metrics are low</li>
@@ -497,7 +494,6 @@ def create_interactive_visualization(
         <li>PC2 captures secondary patterns where metrics disagree</li>
         <li>Pattern metrics add new dimensions of analysis based on n-gram sequences</li>
     </ul>
-    
     <h3>How to Read This Plot:</h3>
     <ul>
         <li><strong>Right side:</strong> Higher similarity (Jaccard, LCS, Pattern Similarity)</li>
@@ -505,26 +501,45 @@ def create_interactive_visualization(
         <li><strong>Vertical position:</strong> Captures subtler differences between metrics</li>
         <li><strong>Legend interaction:</strong> Click on colored dots in the legend to show/hide specific text pairs</li>
     </ul>
-    
     <h3>The Colored Circles:</h3>
     <ul>
         <li><strong>Orange circle:</strong> The main cluster where most text comparisons fall (normal similarity patterns)</li>
         <li><strong>Teal circle:</strong> Outlier texts where metrics show unusual or contradictory patterns</li>
     </ul>
-    
     <p><em>Hover over any point for details</em></p>
     """
     
     # Ensure pca_dir exists - handle any nested subdirectories in the path
     pca_dir.mkdir(parents=True, exist_ok=True)
     
-    # Create a complete custom HTML layout with flexbox
-    html_file = pca_dir / 'interactive_pca_visualization.html'
-    
     # Generate just the plotly figure without full HTML, set responsive to True
     plot_div = fig.to_html(include_plotlyjs='cdn', full_html=False, config={'responsive': True})
-    
-    # Create a fully custom HTML with responsive design
+
+    # --- PATCH: Improved responsive CSS for PCA visualization ---
+    responsive_css = '''
+            body, html { margin: 0; padding: 0; font-family: Arial, sans-serif; }
+            .main-container { display: flex; flex-direction: column; width: 100%; margin: 0 auto; }
+            .container { display: flex; flex-direction: row; flex-wrap: wrap; width: 100%; }
+            .explanation { flex: 0 0 330px; padding: 20px; font-size: 13px; min-width: 220px; max-width: 350px; box-sizing: border-box; }
+            .plot-container { flex: 1; min-width: 300px; width: 100%; height: 80vh; box-sizing: border-box; }
+            h1 { font-size: 22px; text-align: center; margin: 15px 0; }
+            h2 { font-size: 18px; }
+            h3 { font-size: 15px; }
+            .js-plotly-plot { width: 100% !important; height: 100% !important; }
+            /* Responsive adaptations */
+            @media (max-width: 1100px) {
+              .container { flex-direction: column; }
+              .explanation { width: 100%; max-width: 100%; min-width: 0; }
+              .plot-container { width: 100%; min-height: 60vh; }
+            }
+            @media (max-width: 768px) {
+              .plot-container { height: 60vh; }
+              body { font-size: 14px; }
+              h1, h2, h3 { margin: 10px 0; }
+            }
+    '''
+    # --- END PATCH ---
+
     custom_html = f'''
     <!DOCTYPE html>
     <html>
@@ -533,27 +548,7 @@ def create_interactive_visualization(
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Tibetan Text Similarities: PCA Visualization</title>
         <style>
-            body, html {{ margin: 0; padding: 0; font-family: Arial, sans-serif; }}
-            .main-container {{ display: flex; flex-direction: column; width: 100%; margin: 0 auto; }}
-            .container {{ display: flex; flex-direction: row; flex-wrap: wrap; width: 100%; }}
-            .explanation {{ flex: 0 0 330px; padding: 20px; font-size: 13px; }}  /* Increased width by 30px and reduced font size */
-            .plot-container {{ flex: 1; min-width: 300px; width: 100%; height: 80vh; }}
-            h1 {{ font-size: 22px; text-align: center; margin: 15px 0; }}
-            h2 {{ font-size: 18px; }} /* Reduced heading sizes */
-            h3 {{ font-size: 15px; }}
-            .js-plotly-plot {{ width: 100% !important; height: 100% !important; }}
-            
-            /* Responsive adaptations */
-            @media (max-width: 1400px) {{ 
-                .container {{ flex-direction: column; }} 
-                .explanation {{ flex: none; width: auto; font-size: 14px; }} /* Restore font size on small screens */
-                .plot-container {{ width: 100%; min-height: 80vh; }} 
-            }}
-            @media (max-width: 768px) {{ 
-                .plot-container {{ height: 90vh; }} 
-                body {{ font-size: 14px; }}
-                h1, h2, h3 {{ margin: 10px 0; }}
-            }}
+        {responsive_css}
         </style>
         <!-- Additional script to ensure Plotly is fully responsive -->
         <script>
@@ -577,15 +572,28 @@ def create_interactive_visualization(
                 </div>
                 <div class="plot-container">
                     {plot_div}
+                    <!-- PATCH: Autoscale axes on load -->
+                    <script>
+                    window.addEventListener('DOMContentLoaded', function() {{
+                        var plot = document.querySelector('.js-plotly-plot');
+                        if (window.Plotly && plot) {{
+                            Plotly.relayout(plot, {{
+                                'xaxis.autorange': true,
+                                'yaxis.autorange': true
+                            }});
+                        }}
+                    }});
+                    </script>
+                    <!-- END PATCH -->
                 </div>
             </div>
         </div>
     </body>
     </html>
     '''
-    
+
     # Write the custom HTML to file
-    with open(str(html_file), 'w') as f:
+    with open(str(pca_dir / 'interactive_pca_visualization.html'), 'w') as f:
         f.write(custom_html)
-    
-    print(f"Saved interactive PCA visualization to {html_file}")
+
+    print(f"Saved interactive PCA visualization to {pca_dir / 'interactive_pca_visualization.html'}")

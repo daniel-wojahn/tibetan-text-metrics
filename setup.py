@@ -2,6 +2,7 @@ import numpy
 from setuptools import Extension, setup
 
 setup(
+    version="0.3.0",
     ext_modules=[
         Extension(
             "tibetan_text_metrics.fast_lcs",

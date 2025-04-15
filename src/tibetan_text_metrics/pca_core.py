@@ -22,17 +22,24 @@ def prepare_data_for_pca(results_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Dat
     # Check if the pattern metrics exist in the DataFrame
     pattern_metrics = ['POS Pattern Similarity', 'Word Pattern Similarity']
     available_metrics = [m for m in pattern_metrics if m in results_df.columns]
-    
+
     # Base metrics always included
     base_metrics = [
         'Normalized Syntactic Distance',
         'Weighted Jaccard Similarity (%)',
-        'Normalized LCS (%)'
+        # 'Normalized LCS (%)'  # DROPPED: highly correlated with Jaccard
     ]
-    
-    # Combine base metrics with any available pattern metrics
-    selected_metrics = base_metrics + available_metrics
-    
+
+    # Only keep POS Pattern Similarity (drop Word Pattern Similarity if both present)
+    selected_pattern_metrics = []
+    if 'POS Pattern Similarity' in available_metrics:
+        selected_pattern_metrics.append('POS Pattern Similarity')
+    elif 'Word Pattern Similarity' in available_metrics:
+        selected_pattern_metrics.append('Word Pattern Similarity')
+
+    # Combine base metrics with selected pattern metric
+    selected_metrics = base_metrics + selected_pattern_metrics
+
     # Select features for PCA
     features = results_df[selected_metrics]
     

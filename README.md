@@ -12,26 +12,45 @@ A Python tool designed to analyze textual similarities and variations in Tibetan
 
 TibetanTextMetrics (TTM) grew out of the challenge of analysing multiple editions of the 17th-century Tibetan legal text "The Pronouncements in Sixteen Chapters" (*zhal lce bcu drug*) as part of the [Law in Historic Tibet](https://www.law.ox.ac.uk/law-historic-tibet) project at the Centre for Socio-Legal Studies at the University of Oxford. My original approach stemmed from an understanding within the Tibetan scholarly tradition that all *zhal lce bcu drug* editions are essentially identical. Thus the plan was for a critical edition using all available editions. However, a preliminary attempt using [CollateX](https://collatex.net/) revealed substantial differences between editions, particularly in certain chapters, resulting in a convoluted apparatus that was very hard to navigate. While CollateX is ideal for texts with minor variations, the large variations between these editions required a different analytical approach. Simple comparison methods such as difflib or online plagiarism checkers offered limited insights. In order to perform a more in-depth analysis, including semantic, structural and content-based comparisons (as far as possible for the Tibetan language), I developed TTM. This tool provides the quantitative metrics necessary to effectively assess textual similarities at the chapter level, helping researchers to understand broader patterns of textual evolution.
 
-### Key features and use cases:
+## Key features and use cases:
 
 - **Chapter/Section-based Analysis**: Uses Tibetan section markers (*sbrul shad*, ༈) to automatically split texts into comparable units, enabling targeted analysis of specific sections
 - **Flexible Text Segmentation**: Adaptable for various historical texts and genres (a corpus like the many Sakya Genealogies (*sa skya gdung rabs*) or different editions of biographical literature (*rnam thar*) come to mind)
 - **Text Evolution Analysis**: Helps trace how texts evolved over time by identifying where successive authors and editors incorporated additional material
 - **Data-Driven Insights**: Provides quantitative metrics to complement qualitative textual analysis
+- **N-gram Pattern Analysis**: Compares how often different word or POS tag sequences (n-grams) appear in each text, using a pattern-based approach that detects similarities in _style_ and _structure_, not just exact matches.
 
-## Features
+## Approach & Metrics
 
-- **Syntactic Distance**: Counts the number of operations needed to transform one POS tag sequence into another. Also provides a normalized version (0-1) scaled by text length, enabling fair comparison between chapters of different sizes.
+- **Normalized Syntactic Distance**: Measures how different the grammatical structures are between texts, normalized for text length. This captures structural similarity and is robust to content variation.
+- **Weighted Jaccard Similarity**: Measures vocabulary overlap, giving more weight to linguistically important parts of speech (customizable in `metrics.py`). This highlights meaningful lexical similarities.
+- **Normalized LCS**: Identifies the longest common subsequence of words, normalized for text length. This metric finds shared sequential patterns and is Cython-optimized for speed.
+- **Pattern Recognition**: Analyzes n-gram patterns in both words and POS tags, using cosine similarity to compare pattern usage between texts. Parallel processing and Cython optimization make this efficient even for large corpora.
+- **N-gram pattern analysis**: Instead of just counting which phrases or sequences are shared, this method looks at how frequently each sequence appears in each text. It then compares these overall patterns, so even if two texts do not have many identical phrases, they can still be considered similar if they use language in a similar way. This helps identify stylistic or structural resemblance, even when the texts are not direct copies.
 
-- **Weighted Jaccard Similarity**: Measures vocabulary overlap with POS-based weighting (customizable in `metrics.py`), allowing you to emphasize content words like nouns and verbs over function words.
+- **Principal Component Analysis (PCA)**: Combines multiple metrics into an intuitive, multi-dimensional visualization of textual relationships. Includes adaptive cluster detection and outlier identification.
+- **Visualizations**: Generates heatmaps for each metric to help identify clusters and similarities among texts and chapters.
 
-- **Longest Common Subsequence (LCS)**: Identifies shared sequences of words (Cython-optimized). Both raw counts and normalized percentages (relative to average text length) are provided.
+### Why These Metrics?
+- **Content-level analysis** (e.g., word2vec, BERT, etc.) is not yet reliable for Tibetan due to limited resources and training data.
+- **Structural metrics** (POS-based, LCS, Jaccard) are language-agnostic and robust even with limited semantic resources.
+- **Weighted approaches** allow you to emphasize linguistically important features (e.g., nouns, verbs).
 
-- **Pattern Recognition**: Analyzes n-gram patterns in both words and POS tags (Cython-optimized). Uses cosine similarity to measure pattern usage between texts, with parallel processing for efficiency.
+### Interpreting the Results
+- **Normalized Syntactic Distance**: 0 means identical structure, 1 means completely different.
+- **Weighted Jaccard**: Higher is more overlap (max 100%).
+- **Normalized LCS**: Higher is more sequential similarity (max 100%).
 
-- **Principal Component Analysis (PCA)**: Provides multi-dimensional visualization of textual relationships, combining multiple metrics into an intuitive visual representation. Features adaptive cluster detection, outlier identification using Median Absolute Deviation (MAD), and dynamic region visualization based on data distribution.
+### Limitations
+- **Semantic depth**: Without reliable word embeddings or semantic models for Tibetan, the analysis can’t fully capture meaning-level similarity.
+- **POS tagging accuracy**: All structural metrics depend on the quality of POS tagging.
 
-- **Visualizations**: Generate heatmaps for individual metrics and PCA plots that help identify clusters of similar texts and chapters.
+
+## Output
+
+- **CSV file**: `output/metrics/pos_tagged_analysis.csv` with normalized metrics only.
+- **Visualizations**: Heatmaps for each normalized metric in `output/heatmaps/`.
+- **PCA**: Principal Component Analysis based on normalized metrics.
 
 ## Installation
 
@@ -108,87 +127,25 @@ cd tibetan-text-metrics
    - Heatmap visualizations: `output/heatmaps/`
    - PCA visualizations: `output/pca/interactive_pca_visualization.html`
 
-## Output
-
-The tool generates:
-- **CSV files**:
-  - `output/metrics/pos_tagged_analysis.csv`: Complete pairwise analysis with all metrics (both raw and normalized)
-  - `output/metrics/pattern_analysis.csv`: Results of the pattern-based analysis, including word and POS pattern similarities
-  - `output/pca/pca_data.csv`: PCA coordinates with normalized metrics for further analysis
-  - `output/pca/pca_loadings.csv`: Shows how each metric contributes to the principal components
-
-- **Visualizations**:
-  - `output/heatmaps/`: Heatmaps for each metric (normalized and raw versions)
-  - `output/heatmaps/heatmap_pattern_pos_pattern_similarity.png`: Heatmap showing POS pattern similarities between chapters
-  - `output/heatmaps/heatmap_pattern_word_pattern_similarity.png`: Heatmap showing word pattern similarities between chapters
-  - `output/pca/interactive_pca_visualization.html`: Interactive PCA plots showing:
-    - Chapter relationships by text pair and chapter
-    - Adaptive cluster regions based on data distribution
-    - Outliers identified using robust statistical methods
-    - Feature vector projections showing metric contributions
-    - Dynamic visualization that adjusts to show single or multiple clusters based on data separation
-
-For the Weighted Jaccard Similarity metric, you can customize POS tag weights in `metrics.py` to control how different parts of speech affect the similarity score. This allows you to give more weight to content words (nouns, verbs) versus function words, for example.
-
-### Understanding Normalized Metrics
-
-Normalization is crucial when comparing chapters of different lengths. For example:
-- Raw syntactic distance between two 1000-word chapters might be 200 operations
-- Raw syntactic distance between two 100-word chapters might be 20 operations
-- Despite the 10x difference in raw values, both represent the same proportional difference (20%)
-
-Normalized metrics address this by scaling values relative to text length, providing fair comparisons that aren't biased by chapter size.
-
-### Interpreting Pattern Similarity Scores
-
-The pattern recognition feature produces similarity scores ranging from 0 to 1:
-
-- **Word Pattern Similarity**: Measures how similarly words are arranged in n-gram patterns.
-  - A score of 1.0 indicates identical word pattern usage
-  - A score of 0.0 indicates no common word patterns
-  - Higher scores suggest texts that use the same sequences of words, possibly indicating shared sources or direct copying
-
-- **POS Pattern Similarity**: Measures how similarly parts of speech are arranged.
-  - A score of 1.0 indicates identical grammatical structures
-  - A score of 0.0 indicates completely different grammatical structures
-  - Higher scores suggest similar writing styles or rhetorical structures, even if different vocabulary is used
-
-These metrics use cosine similarity between n-gram frequency distributions, which makes them naturally normalized regardless of text length.
-
-### Understanding PCA Visualization
-
-The PCA visualization includes several advanced features:
-
-- **Adaptive Clustering**: Uses silhouette analysis to determine if the data naturally forms distinct clusters. When clusters are well-separated (silhouette score > 0.3), shows both main and secondary cluster regions. Otherwise, displays a single main cluster region.
-
-- **Outlier Detection**: Uses Median Absolute Deviation (MAD) with a threshold of 1.5 to identify significant outliers while being robust against extreme values. This statistical approach helps highlight truly notable deviations in the data.
-
-- **Dynamic Regions**: Cluster regions automatically adapt to the actual shape and distribution of your data, with padding proportional to cluster size. This ensures the visualization accurately represents the underlying data structure.
-
-- **Feature Vectors**: Shows how different metrics (syntactic distance, Jaccard similarity, etc.) contribute to the principal components, helping you understand which aspects of textual similarity are most important for distinguishing between texts. The default n-gram size (3) can be adjusted to focus on shorter or longer patterns.
-
-### PCA Visualization
-
-The tool includes an enhanced Principal Component Analysis (PCA) visualization that helps interpret the relationships between different text chapters based on multiple metrics simultaneously:
-
-- **Interactive HTML plot** with hover information for each data point
-- **Clear metric labels** positioned in the corners of the visualization
-- **Built-in explanation** of how to interpret the PCA results
-- **Visual clustering** to identify outliers and pattern groups
-
-The PCA visualization can be found in `output/pca/interactive_pca_visualization.html` and provides:
-
-1. A scatterplot where each point represents a chapter comparison
-2. Points are colored by text pair to identify patterns within comparisons
-3. Main and secondary cluster regions with clear visual boundaries
-
-This visualization is particularly useful for identifying which chapters have unusual similarity patterns compared to others.
-
-The PCA analysis is based on the metrics calculated during the pairwise comparison process, providing a holistic view that combines multiple similarity measures into a single visualization.
-
 ## License
 
 This project is licensed under the Creative Commons Attribution 4.0 International License - see the [LICENSE](LICENSE) file for details or visit the [Creative Commons](https://creativecommons.org/licenses/by/4.0/) website.
+
+## Further Reading
+
+TTM's development draws upon established computational linguistics approaches:
+
+Graham, S., Milligan, I., & Weingart, S. 2016. _Exploring Big Historical Data: The Historian’s Macroscope_. Imperial College Press.
+ 
+Jurafsky, D., & Martin, J. H. 2014. _Speech and Language Processing_. (Second edition, Pearson new international edition). Pearson.
+ 
+Li, Y., Li, X., Wang, Y., Lv, H., Li, F., & Duo, L. 2022. "Character-based Joint Word Segmentation and Part-of-Speech Tagging for Tibetan Based on Deep Learning". In _ACM Transactions on Asian and Low-Resource Language Information Processing_, 21(5). [https://doi.org/10.1145/3511600](https://doi.org/10.1145/3511600).
+ 
+Veidlinger, D. (2019). "Computational Linguistics and the Buddhist Corpus". In D. Veidlinger (Ed.), _Digital Humanities and Buddhism: An Introduction_, 43–58. Berlin, Boston: De Gruyter. [https://doi.org/10.1515/9783110519082-003](https://doi.org/10.1515/9783110519082-003).
+ 
+Wang, J., & Dong, Y. (2020). "Measurement of Text Similarity: A Survey". _Information (Basel), 11(9), 421_. [https://doi.org/10.3390/info11090421](https://doi.org/10.3390/info11090421).
+
+Check out also Paul Vierthaler’s [“Hacking the Humanities” workshop](https://www.youtube.com/playlist?list=PL6kqrM2i6BPIpEF5yHPNkYhjHm-FYWh17)
 
 ## Contributing
 
@@ -211,10 +168,10 @@ If you use this tool in your research, please cite:
   author = {Daniel Wojahn},
   year = {2025},
   url = {https://github.com/daniel-wojahn/tibetan-text-metrics},
-  version = {0.1.0}
+  version = {0.3.0}
 }
 ```
 
 MLA:
 ```text
-Wojahn, Daniel. "TibetanTextMetrics (TTM): Computing Text Similarity Metrics on POS-tagged Tibetan Texts." Version 0.1.0, 2025, github.com/daniel-wojahn/tibetan-text-metrics.
+Wojahn, Daniel. "TibetanTextMetrics (TTM): Computing Text Similarity Metrics on POS-tagged Tibetan Texts." Version 0.3.0, 2025, github.com/daniel-wojahn/tibetan-text-metrics.

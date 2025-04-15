@@ -22,10 +22,8 @@ def save_results_and_visualize(results_df: pd.DataFrame, metrics_dir: Path, heat
 
     # Convert columns to numeric
     numeric_columns = [
-        "Syntactic Distance (POS Level)",
         "Normalized Syntactic Distance",
         "Weighted Jaccard Similarity (%)",
-        "LCS Length",
         "Normalized LCS (%)",
         "Chapter Length 1",
         "Chapter Length 2",
@@ -36,23 +34,13 @@ def save_results_and_visualize(results_df: pd.DataFrame, metrics_dir: Path, heat
 
     # Create pivot tables for heatmaps
     pivot_data = {
-        "Syntactic Distance": (
-            results_df.pivot(
-                index="Chapter",
-                columns="Text Pair",
-                values="Syntactic Distance (POS Level)",
-            ).fillna(0).astype(int),
-            "Reds",
-            "Syntactic Distance: Shows the number of operations (insertions, deletions, substitutions) needed to transform one POS tag sequence into another.\nHigher values indicate more structural differences.",
-            "d",
-        ),
         "Normalized Syntactic Distance": (
             results_df.pivot(
                 index="Chapter",
                 columns="Text Pair",
                 values="Normalized Syntactic Distance",
             ).fillna(0),
-            "Reds",  # Changed from Reds_r to Reds for 0=white, 1=dark red
+            "Reds",
             "Normalized Syntactic Distance: Shows the proportion of POS tags that differ between texts (0-1).\nNormalized by text length to allow fair comparison between chapters of different sizes.\nHigher values (darker red) indicate greater differences.",
             ".2f",
         ),
@@ -65,12 +53,6 @@ def save_results_and_visualize(results_df: pd.DataFrame, metrics_dir: Path, heat
             "Blues",
             "Weighted Jaccard Similarity: Measures unique vocabulary overlap with POS-based weighting.",
             ".1f",
-        ),
-        "LCS": (
-            results_df.pivot(index="Chapter", columns="Text Pair", values="LCS Length").fillna(0).astype(int),
-            "Greens",
-            "LCS Length: Measures the length of the longest common subsequence of words between text pairs.",
-            ".0f",
         ),
         "Normalized LCS": (
             results_df.pivot(index="Chapter", columns="Text Pair", values="Normalized LCS (%)").fillna(0),
