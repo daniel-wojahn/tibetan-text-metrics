@@ -72,7 +72,7 @@ cd tibetan-text-metrics
    ```
 
    **For macOS/Linux:**
-   - Use Python 3.10 or later (Python 3.13 has known issues with gensim dependencies)
+   - Use Python 3.10 or later
    ```bash
    python -m venv .venv
    source .venv/bin/activate
@@ -82,17 +82,7 @@ cd tibetan-text-metrics
    ```bash
    pip install -e .
    ```
-   Development dependencies include:
-   - Testing: pytest
-   - Code Quality: black (formatting), isort (import sorting), flake8 (linting)
-   - Type Checking: mypy with pandas-stubs
-   - Security: bandit
-   - Performance: memory-profiler
 
-   **Note for Windows users:** If you encounter any issues with Cython compilation, ensure that:
-   - Visual Studio Build Tools are properly installed
-   - You're using Python 3.10+ (Python 3.13 has known issues with gensim dependencies)
-   - Your environment variables are correctly set (usually handled by VS Build Tools installer)
 
 ## Usage
 
