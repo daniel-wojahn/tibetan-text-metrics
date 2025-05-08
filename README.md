@@ -22,14 +22,19 @@ TibetanTextMetrics (TTM) grew out of the challenge of analysing multiple edition
 
 ## Approach & Metrics
 
-- **Normalized Syntactic Distance**: Measures how different the grammatical structures are between texts, normalized for text length. This captures structural similarity and is robust to content variation.
-- **Weighted Jaccard Similarity**: Measures vocabulary overlap, giving more weight to linguistically important parts of speech (customizable in `metrics.py`). This highlights meaningful lexical similarities.
-- **Normalized LCS**: Identifies the longest common subsequence of words, normalized for text length. This metric finds shared sequential patterns and is Cython-optimized for speed.
-- **Pattern Recognition**: Analyzes n-gram patterns in both words and POS tags, using cosine similarity to compare pattern usage between texts. Parallel processing and Cython optimization make this efficient even for large corpora.
-- **N-gram pattern analysis**: Instead of just counting which phrases or sequences are shared, this method looks at how frequently each sequence appears in each text. It then compares these overall patterns, so even if two texts do not have many identical phrases, they can still be considered similar if they use language in a similar way. This helps identify stylistic or structural resemblance, even when the texts are not direct copies.
+This tool uses several complementary approaches to compare Tibetan texts:
 
-- **Principal Component Analysis (PCA)**: Combines multiple metrics into an intuitive, multi-dimensional visualization of textual relationships. Includes adaptive cluster detection and outlier identification.
-- **Visualizations**: Generates heatmaps for each metric to help identify clusters and similarities among texts and chapters.
+- **Syntactic Distance (Normalized):** Measures how similarly two texts are structured grammatically. A low score means the sentence structures are alike; a high score means they are quite different. This highlights differences in style or editing.
+
+- **Weighted Jaccard Similarity:** Calculates how much important vocabulary (especially nouns and verbs) is shared between texts. A higher score means the texts use similar vocabulary; a lower score means they focus on different things.
+
+- **Normalized LCS (Longest Common Subsequence):** Finds the longest sequence of words that appears in both texts, even if there are gaps. A longer shared sequence suggests similar or copied passages; a shorter one means more differences.
+
+- **Pattern Recognition (N-gram Analysis):** Looks for repeating patterns of words or grammatical tags (like pairs or triplets). If two texts use similar patterns often, they may be stylistically or structurally related, even if the exact words differ. This helps identify stylistic or structural resemblance, not just direct copying.
+
+- **Principal Component Analysis (PCA):** Combines the above metrics into a multi-dimensional visualization, helping you spot clusters, similarities, and outliers among texts and chapters.
+
+- **Visualizations:** Generates heatmaps for each metric to help you quickly see which texts or chapters are most similar or different.
 
 ### Why These Metrics?
 - **Content-level analysis** (e.g., word2vec, BERT, etc.) is not yet reliable for Tibetan due to limited resources and training data.
@@ -116,6 +121,16 @@ cd tibetan-text-metrics
    - CSV file with metrics: `output/metrics/pos_tagged_analysis.csv`
    - Heatmap visualizations: `output/heatmaps/`
    - PCA visualizations: `output/pca/interactive_pca_visualization.html`
+
+## Future Directions: Phrase Detection
+
+Phrase detection aims to go beyond fixed-length n-grams by identifying meaningful, recurring expressions in Tibetan texts—such as set formulas, idioms, or common syntactic constructions. This can be done using:
+
+- **Rule-based methods** (e.g., splitting by Tibetan punctuation or known grammatical patterns)
+- **Statistical methods** (e.g., finding word combinations that occur together more than by chance)
+- **Machine learning** (e.g., algorithms that learn to spot phrase boundaries from data)
+
+In Tibetan, this could mean detecting multi-syllable expressions, formulaic legal or religious phrases, or idioms. Integrating phrase detection would make the tool even more linguistically aware and valuable for genres where set expressions matter. This is a planned area for future development—suggestions and collaborations are welcome!
 
 ## License
 
