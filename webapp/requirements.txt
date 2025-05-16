@@ -1,0 +1,12 @@
+gradio>=4.0.0
+pandas
+plotly
+matplotlib
+seaborn
+scikit-learn
+# botok is required for Tibetan tokenization, ensure it is available on Hugging Face Spaces
+botok
+torch
+transformers
+sentence-transformers
+numba

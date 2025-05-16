@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.nox/
+.hypothesis/
+.pytest_cache/
+cover/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Ruff cache
+.ruff_cache/
+
+# Application-specific
+results.csv
+*.log
