@@ -7,8 +7,17 @@ import torch
 from .semantic_embedding import generate_embeddings
 from .tokenize import tokenize_texts
 import logging
-from numba import njit
+from sentence_transformers import SentenceTransformer
 from sklearn.feature_extraction.text import TfidfVectorizer
+from .stopwords_bo import TIBETAN_STOPWORDS, TIBETAN_STOPWORDS_SET
+
+# Attempt to import the Cython-compiled fast_lcs module
+try:
+    from .fast_lcs import compute_lcs_fast
+    USE_CYTHON_LCS = True
+except ImportError:
+    # print("Cython fast_lcs not found, using Python LCS. For better performance, compile the Cython module.")
+    USE_CYTHON_LCS = False
 
 logger = logging.getLogger(__name__)
 
@@ -65,19 +74,28 @@ def _chunk_text(
     return reconstructed_text_chunks
 
 
-@njit
 def compute_normalized_lcs(words1: List[str], words2: List[str]) -> float:
+    # Calculate m and n (lengths) here, so they are available for normalization
+    # regardless of which LCS implementation is used.
     m, n = len(words1), len(words2)
-    if m == 0 or n == 0:
-        return 0.0
-    dp = np.zeros((m + 1, n + 1), dtype=np.int32)
-    for i in range(1, m + 1):
-        for j in range(1, n + 1):
-            if words1[i - 1] == words2[j - 1]:
-                dp[i, j] = dp[i - 1, j - 1] + 1
-            else:
-                dp[i, j] = max(dp[i - 1, j], dp[i, j - 1])
-    lcs_length = int(dp[m, n])
+
+    if USE_CYTHON_LCS:
+        # Use the Cython-compiled version if available
+        lcs_length = compute_lcs_fast(words1, words2)
+    else:
+        # Fallback to pure Python implementation
+        # m, n = len(words1), len(words2) # Moved to the beginning of the function
+        # Using numpy array for dp table can be slightly faster than list of lists for large inputs
+        # but the primary bottleneck is the Python loop itself compared to Cython.
+        dp = np.zeros((m + 1, n + 1), dtype=np.int32)
+
+        for i in range(1, m + 1):
+            for j in range(1, n + 1):
+                if words1[i - 1] == words2[j - 1]:
+                    dp[i, j] = dp[i - 1, j - 1] + 1
+                else:
+                    dp[i, j] = max(dp[i - 1, j], dp[i, j - 1])
+        lcs_length = int(dp[m, n])
     avg_length = (m + n) / 2
     return lcs_length / avg_length if avg_length > 0 else 0.0
 
@@ -209,6 +227,7 @@ def compute_all_metrics(
     # Prepare token lists (always use tokenize_texts for raw Unicode)
     token_lists = {}
     corpus_for_tfidf = []  # For storing space-joined tokens for TF-IDF
+    tibetan_stopwords_set = set() # Initialize for Jaccard (and potentially LCS) filtering
 
     for fname, content in texts.items():
         tokenized_content = tokenize_texts([content])  # Returns a list of lists
@@ -228,8 +247,14 @@ def compute_all_metrics(
     if corpus_for_tfidf:
         # Using a dummy tokenizer and preprocessor as input is already tokenized (as space-separated strings)
         # and we don't want further case changes or token modifications for Tibetan.
+        # Define Tibetan stopwords. These should match tokens produced by botok.
+        # Tibetan stopwords are now imported from stopwords_bo.py
+
         vectorizer = TfidfVectorizer(
-            tokenizer=lambda x: x.split(), preprocessor=lambda x: x, token_pattern=None
+            tokenizer=lambda x: x.split(),
+            preprocessor=lambda x: x,
+            token_pattern=None,
+            stop_words=TIBETAN_STOPWORDS
         )
         tfidf_matrix = vectorizer.fit_transform(corpus_for_tfidf)
         # Calculate pairwise cosine similarity on the TF-IDF matrix
@@ -243,20 +268,29 @@ def compute_all_metrics(
 
     for i, j in combinations(range(len(files)), 2):
         f1, f2 = files[i], files[j]
-        words1, words2 = token_lists[f1], token_lists[f2]
+        words1_raw, words2_raw = token_lists[f1], token_lists[f2]
+
+        # Filter stopwords for Jaccard calculation using the imported TIBETAN_STOPWORDS_SET
+        # If TIBETAN_STOPWORDS_SET is empty (e.g., if stopwords_bo.py somehow yields an empty set), 
+        # filtering will have no effect, which is a safe fallback.
+        words1_jaccard = [word for word in words1_raw if word not in TIBETAN_STOPWORDS_SET]
+        words2_jaccard = [word for word in words2_raw if word not in TIBETAN_STOPWORDS_SET]
+
         jaccard = (
-            len(set(words1) & set(words2)) / len(set(words1) | set(words2))
-            if set(words1) | set(words2)
+            len(set(words1_jaccard) & set(words2_jaccard)) / len(set(words1_jaccard) | set(words2_jaccard))
+            if set(words1_jaccard) | set(words2_jaccard)  # Ensure denominator is not zero
             else 0.0
         )
+        # LCS uses raw tokens (words1_raw, words2_raw) to provide a complementary metric.
+        # Semantic similarity also uses raw text and its botok tokens for chunking decisions.
         jaccard_percent = jaccard * 100.0
-        norm_lcs = compute_normalized_lcs(words1, words2)
+        norm_lcs = compute_normalized_lcs(words1_raw, words2_raw)
 
         # Semantic Similarity Calculation
         if enable_semantic:
             # Pass raw texts and their pre-computed botok tokens
             semantic_sim = compute_semantic_similarity(
-                texts[f1], texts[f2], words1, words2, model, device
+                texts[f1], texts[f2], words1_raw, words2_raw, model, device
             )
         else:
             semantic_sim = np.nan

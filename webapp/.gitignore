@@ -21,6 +21,11 @@ MANIFEST
 # Ruff cache
 .ruff_cache/
 
+# Cython build artifacts
+pipeline/fast_lcs.c
+pipeline/*.so
+build/
+
 # Application-specific
 results.csv
 *.log

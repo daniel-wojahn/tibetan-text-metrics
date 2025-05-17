@@ -2,11 +2,11 @@ import gradio as gr
 from pathlib import Path
 from pipeline.process import process_texts
 from pipeline.visualize import generate_visualizations, generate_word_count_chart
-import cProfile
-import pstats
-import io
+import logging
 
 from theme import tibetan_theme
+
+logger = logging.getLogger(__name__)
 
 
 # Main interface logic
@@ -29,7 +29,7 @@ def main_interface():
                     gr.Markdown(
                         """
                     ## Step 1: Upload Your Tibetan Text Files
-                    <span style='font-size:16px;'>Upload one or more `.txt` files. Each file should contain Unicode Tibetan text, segmented into chapters/sections if possible.</span>
+                    <span style='font-size:16px;'>Upload one or more `.txt` files. Each file should contain Unicode Tibetan text, segmented into chapters/sections if possible using the marker '༈' (<i>sbrul shad</i>).</span>
                     """,
                         elem_classes="gr-markdown",
                     )
@@ -41,16 +41,16 @@ def main_interface():
             with gr.Column(scale=1, elem_classes="step-column"):
                 with gr.Group():
                     gr.Markdown(
-                        """## Step 2: Configure and Run the Analysis
-<span style='font-size:16px;'>Choose your analysis options and click the button below to compute metrics and view results. For meaningful analysis, ensure your texts are segmented by chapter or section using a marker like '༈'. The tool will split files based on this marker.</span>
+                        """## Step 2: Configure and run the analysis
+<span style='font-size:16px;'>Choose your analysis options and click the button below to compute metrics and view results. For meaningful analysis, ensure your texts are segmented by chapter or section using the marker '༈' (<i>sbrul shad</i>). The tool will split files based on this marker.</span>
                     """,
                         elem_classes="gr-markdown",
                     )
                     semantic_toggle_radio = gr.Radio(
-                        label="Compute Semantic Similarity?",
+                        label="Compute semantic similarity?",
                         choices=["Yes", "No"],
                         value="Yes",
-                        info="Semantic similarity can be time-consuming. Choose 'No' to speed up analysis if these metrics are not required.",
+                        info="Semantic similarity will be time-consuming. Choose 'No' to speed up analysis if these metrics are not required.",
                         elem_id="semantic-radio-group",
                     )
                     process_btn = gr.Button(
@@ -74,18 +74,20 @@ def main_interface():
         heatmap_titles = {
             "Jaccard Similarity (%)": "Jaccard Similarity (%): Higher scores (brighter) mean more shared unique words.",
             "Normalized LCS": "Normalized LCS: Higher scores (brighter) mean longer shared sequences of words.",
-            "Semantic Similarity (BuddhistNLP)": "Semantic Similarity (BuddhistNLP): Higher scores (brighter) mean more similar meanings.",
+            "Semantic Similarity": "Semantic Similarity (using word embeddings/experimental): Higher scores (brighter) mean more similar meanings.",
             "TF-IDF Cosine Sim": "TF-IDF Cosine Similarity: Higher scores mean texts share more important, distinctive vocabulary.",
         }
 
         metric_tooltips = {
             "Jaccard Similarity (%)": """
 ### Jaccard Similarity (%)
-This metric quantifies the lexical overlap between two text segments by comparing their sets of *unique* words. 
-It essentially answers the question: 'Of all the distinct words found across these two segments, what proportion of them are present in both?' 
-It is calculated as `(Number of common unique words) / (Total number of unique words in both texts combined) * 100`. 
-Jaccard Similarity is insensitive to word order and word frequency; it only cares whether a unique word is present or absent. 
-A higher percentage indicates a greater overlap in the vocabularies used in the two segments.
+This metric quantifies the lexical overlap between two text segments by comparing their sets of *unique* words, after **filtering out common Tibetan stopwords**. 
+It essentially answers the question: 'Of all the distinct, meaningful words found across these two segments, what proportion of them are present in both?' 
+It is calculated as `(Number of common unique meaningful words) / (Total number of unique meaningful words in both texts combined) * 100`. 
+Jaccard Similarity is insensitive to word order and word frequency; it only cares whether a unique meaningful word is present or absent. 
+A higher percentage indicates a greater overlap in the significant vocabularies used in the two segments.
+
+**Stopword Filtering**: uses a range of stopwords to filter out common Tibetan words that do not contribute to the semantic content of the text.
 """,
             "Normalized LCS": """
 ### Normalized LCS (Longest Common Subsequence)
@@ -95,22 +97,28 @@ For example, if Text A is '<u>the</u> quick <u>brown</u> fox <u>jumps</u>' and T
 The length of this common subsequence is then normalized (in this tool, by dividing by the length of the longer of the two segments) to provide a score, which is then presented as a percentage. 
 A higher Normalized LCS score suggests more significant shared phrasing, direct textual borrowing, or strong structural parallelism, as it reflects similarities in how ideas are ordered and expressed sequentially.
 
-*Note on Interpretation*: It's possible for Normalized LCS to be higher than Jaccard Similarity. This often happens when texts share a substantial 'narrative backbone' or common ordered phrases (leading to a high LCS), even if they use varied surrounding vocabulary or introduce many unique words not part of these core sequences (which would lower the Jaccard score). LCS highlights this sequential, structural similarity, while Jaccard focuses on the overall shared vocabulary regardless of its arrangement.
+**No Stopword Filtering.** Unlike metrics such as Jaccard Similarity or TF-IDF Cosine Similarity (which typically filter out common stopwords to focus on content-bearing words), the LCS calculation in this tool intentionally uses the raw, unfiltered sequence of tokens from your texts. This design choice allows LCS to capture structural similarities and the flow of language, including the use of particles and common words that contribute to sentence construction and narrative sequence. By not removing stopwords, LCS can reveal similarities in phrasing and textual structure that might otherwise be obscured, making it a valuable complement to metrics that focus purely on lexical overlap of keywords.
+
+**Note on Interpretation**: It is possible for Normalized LCS to be higher than Jaccard Similarity. This often happens when texts share a substantial 'narrative backbone' or common ordered phrases (leading to a high LCS), even if they use varied surrounding vocabulary or introduce many unique words not part of these core sequences (which would lower the Jaccard score). LCS highlights this sequential, structural similarity, while Jaccard focuses on the overall shared vocabulary regardless of its arrangement.
 """,
-            "Semantic Similarity (BuddhistNLP)": """
-### Semantic Similarity (BuddhistNLP)
-Utilizes the `buddhist-nlp/bodhi-sentence-cased-v1` model to compute the cosine similarity between the semantic embeddings of text segments. 
+            "Semantic Similarity": """
+### Semantic Similarity (Experimental)
+Utilizes the `<a href="https://huggingface.co/buddhist-nlp/buddhist-sentence-similarity">buddhist-nlp/buddhist-sentence-similarity</a>` model to compute the cosine similarity between the semantic embeddings of text segments. 
 This model is fine-tuned for Buddhist studies texts and captures nuances in meaning. 
 For texts exceeding the model's 512-token input limit, an automated chunking strategy is employed: texts are divided into overlapping chunks, each chunk is embedded, and the resulting chunk embeddings are averaged (mean pooling) to produce a single representative vector for the entire segment before comparison.
+
+**Note**: This metric is experimental and may not perform well for all texts. It is recommended to use it in combination with other metrics for a more comprehensive analysis.
 """,
             "TF-IDF Cosine Sim": """
 ### TF-IDF Cosine Similarity
-This metric first calculates Term Frequency-Inverse Document Frequency (TF-IDF) scores for each word in each text segment. 
+This metric first calculates Term Frequency-Inverse Document Frequency (TF-IDF) scores for each word in each text segment, **after filtering out common Tibetan stopwords**. 
 TF-IDF gives higher weight to words that are frequent within a particular segment but relatively rare across the entire collection of segments. 
-This helps to identify terms that are characteristic or discriminative for a segment. 
+This helps to identify terms that are characteristic or discriminative for a segment. By excluding stopwords, the TF-IDF scores better reflect genuinely significant terms.
 Each segment is then represented as a vector of these TF-IDF scores. 
 Finally, the cosine similarity is computed between these vectors. 
 A score closer to 1 indicates that the two segments share more of these important, distinguishing terms, suggesting they cover similar specific topics or themes.
+
+**Stopword Filtering**: uses a range of stopwords to filter out common Tibetan words that do not contribute to the semantic content of the text.
 """,
         }
         heatmap_tabs = {}
@@ -138,6 +146,16 @@ A score closer to 1 indicates that the two segments share more of these importan
         warning_box = gr.Markdown(visible=False)
 
         def run_pipeline(files, enable_semantic_str):
+            # Initialize all return values to ensure defined paths for all outputs
+            csv_path_res = None
+            metrics_preview_df_res = None # Can be a DataFrame or a string message
+            word_count_fig_res = None
+            jaccard_heatmap_res = None
+            lcs_heatmap_res = None
+            semantic_heatmap_res = None
+            tfidf_heatmap_res = None
+            warning_update_res = gr.update(value="", visible=False) # Default: no warning
+
             """
             Processes uploaded files, computes metrics, generates visualizations, and prepares outputs for the UI.
 
@@ -157,39 +175,14 @@ A score closer to 1 indicates that the two segments share more of these importan
             if not files:
                 return (
                     None,
-                    "Please upload files to process.",
-                    None,
-                    None,
-                    None,
-                    None,
-                    gr.update(value="Please upload files to process.", visible=True),
+                    "Please upload files to analyze.",
+                    None,  # word_count_plot
+                    None,  # jaccard_heatmap
+                    None,  # lcs_heatmap
+                    None,  # semantic_heatmap
+                    None,  # tfidf_heatmap
+                    gr.update(value="Please upload files.", visible=True),
                 )
-
-            pr = cProfile.Profile()
-            pr.enable()
-
-            # Initialize results to ensure they are defined in finally if an early error occurs
-            (
-                csv_path_res,
-                metrics_preview_df_res,
-                word_count_fig_res,
-                jaccard_heatmap_res,
-                lcs_heatmap_res,
-                semantic_heatmap_res,
-                tfidf_heatmap_res,
-                warning_update_res,
-            ) = (
-                None,
-                "Processing error. See console for details.",
-                None,
-                None,
-                None,
-                None,
-                None,
-                gr.update(
-                    value="Processing error. See console for details.", visible=True
-                ),
-            )
 
             try:
                 filenames = [
@@ -214,7 +207,7 @@ A score closer to 1 indicates that the two segments share more of these importan
                     )
                     metrics_preview_df_res = warning_message
                     warning_update_res = gr.update(value=warning_message, visible=True)
-                    # Results for this case are set, finally will execute, then return
+                    # Results for this case are set, then return
                 else:
                     # heatmap_titles is already defined in the outer scope of main_interface
                     heatmaps_data = generate_visualizations(
@@ -237,21 +230,11 @@ A score closer to 1 indicates that the two segments share more of these importan
                     )
 
             except Exception as e:
-                # logger.error(f"Error in processing: {e}", exc_info=True) # Already logged in process_texts or lower levels
-                metrics_preview_df_res = f"Error: {str(e)}"
+                logger.error(f"Error in run_pipeline: {e}", exc_info=True)
+                # metrics_preview_df_res and warning_update_res are set here.
+                # Other plot/file path variables will retain their initial 'None' values set at function start.
+                metrics_preview_df_res = f"Error: {str(e)}" 
                 warning_update_res = gr.update(value=f"Error: {str(e)}", visible=True)
-
-            finally:
-                pr.disable()
-                s = io.StringIO()
-                sortby = (
-                    pstats.SortKey.CUMULATIVE
-                )  # Sort by cumulative time spent in function
-                ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-                print("\n--- cProfile Stats (Top 30) ---")
-                ps.print_stats(30)  # Print the top 30 costly functions
-                print(s.getvalue())
-                print("-------------------------------\n")
 
             return (
                 csv_path_res,

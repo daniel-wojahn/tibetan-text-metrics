@@ -84,13 +84,6 @@ def generate_visualizations(metrics_df: pd.DataFrame, descriptive_titles: dict =
             )
         heatmaps[metric] = fig
 
-    # Use all features including pattern similarities if present
-    if not metrics_df.empty:
-        # Remove '.txt' from Text Pair labels
-        metrics_df = metrics_df.copy()
-        metrics_df["Text Pair"] = metrics_df["Text Pair"].str.replace(
-            ".txt", "", regex=False
-        )
     return heatmaps
 
 

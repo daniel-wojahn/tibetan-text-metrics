@@ -1,12 +1,22 @@
-gradio>=4.0.0
-pandas
-plotly
-matplotlib
-seaborn
-scikit-learn
-# botok is required for Tibetan tokenization, ensure it is available on Hugging Face Spaces
-botok
-torch
-transformers
-sentence-transformers
-numba
+# Core application and UI
+gradio==5.29.1
+pandas==2.2.3
+
+# Plotting and visualization
+plotly==6.0.0
+matplotlib==3.10.1
+seaborn==0.13.2
+
+# Machine learning and numerical processing
+numpy==1.26.4
+scikit-learn==1.6.1
+torch==2.7.0
+transformers==4.51.3
+sentence-transformers==4.1.0
+numba==0.61.2
+
+# Tibetan language processing
+botok==0.9.0
+
+# Build system for Cython
+Cython==3.0.12

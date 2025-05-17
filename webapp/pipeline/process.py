@@ -4,6 +4,7 @@ from .metrics import compute_all_metrics
 from .semantic_embedding import get_sentence_transformer_model_and_device
 from .tokenize import tokenize_texts
 import logging
+from itertools import combinations
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,8 @@ def process_texts(
                 f"Failed to load sentence transformer model: {e}. Semantic similarity will not be available."
             )
             # Optionally, add a warning to the UI if model loading fails
-            # warning += " Semantic similarity model failed to load."
+            # For now, keeping it as a logger.error. UI warning can be added later if desired.
+            pass # Explicitly noting that we are not changing the warning handling for UI here.
     else:
         logger.info("Semantic similarity disabled. Skipping model loading.")
 
@@ -71,8 +73,6 @@ def process_texts(
         fname = seg_id.split("|")[0]
         file_to_chapters.setdefault(fname, []).append(seg_id)
     # For each pair of files, compare corresponding chapters (by index)
-    from itertools import combinations
-
     results = []
     files = list(file_to_chapters.keys())
     for file1, file2 in combinations(files, 2):

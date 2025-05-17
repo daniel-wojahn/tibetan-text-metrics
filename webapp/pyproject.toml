@@ -1,0 +1,8 @@
+[build-system]
+requires = [
+    "setuptools>=42",
+    "Cython>=0.29.21",
+    "numpy>=1.20" 
+]
+build-backend = "setuptools.build_meta"
+backend-path = ["."] # Specifies that setuptools.build_meta is in the current directory's PYTHONPATH
