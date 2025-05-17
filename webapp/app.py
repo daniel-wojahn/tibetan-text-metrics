@@ -74,7 +74,7 @@ def main_interface():
         heatmap_titles = {
             "Jaccard Similarity (%)": "Jaccard Similarity (%): Higher scores (brighter) mean more shared unique words.",
             "Normalized LCS": "Normalized LCS: Higher scores (brighter) mean longer shared sequences of words.",
-            "Semantic Similarity": "Semantic Similarity (using word embeddings/experimental): Higher scores (brighter) mean more similar meanings.",
+            "Semantic Similarity (BuddhistNLP)": "Semantic Similarity (BuddhistNLP - using word embeddings/experimental): Higher scores (brighter) mean more similar meanings.",
             "TF-IDF Cosine Sim": "TF-IDF Cosine Similarity: Higher scores mean texts share more important, distinctive vocabulary.",
         }
 
