@@ -29,3 +29,4 @@ build/
 # Application-specific
 results.csv
 *.log
+models/

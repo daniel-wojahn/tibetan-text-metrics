@@ -8,6 +8,16 @@
 
 A Python tool designed to analyze textual similarities and variations in Tibetan manuscripts using multiple computational approaches.
 
+**Important Update: New Web Application Available!**
+
+The original command-line interface (CLI) tool described in this README (primarily in the `src/` directory) is now considered a legacy version. It requires POS-tagged input and has a different feature set.
+
+For the latest and most feature-rich version of Tibetan Text Metrics, please use our new web application:
+*   **Run Locally**: The web application can be found in the `webapp/` directory of this repository and run locally using Gradio. It supports raw Unicode Tibetan text input and includes advanced features like semantic similarity with multiple model options, including a specialized model for Buddhist texts.
+*   **Online Demo**: A demo version is also available on Hugging Face Spaces: [daniel-wojahn/ttm-webapp-hf](https://huggingface.co/spaces/daniel-wojahn/ttm-webapp-hf) (Note: Performance on the free tier of Hugging Face Spaces may be slower than running locally).
+
+We recommend all users transition to the web application for the best experience. The legacy CLI will remain available but might not receive further updates.
+
 ## Background & Motivation
 
 TibetanTextMetrics (TTM) grew out of the challenge of analysing multiple editions of the 17th-century Tibetan legal text "The Pronouncements in Sixteen Chapters" (*zhal lce bcu drug*) as part of the [Law in Historic Tibet](https://www.law.ox.ac.uk/law-historic-tibet) project at the Centre for Socio-Legal Studies at the University of Oxford. My original approach stemmed from an understanding within the Tibetan scholarly tradition that all *zhal lce bcu drug* editions are essentially identical. Thus the plan was for a critical edition using all available editions. However, a preliminary attempt using [CollateX](https://collatex.net/) revealed substantial differences between editions, particularly in certain chapters, resulting in a convoluted apparatus that was very hard to navigate. While CollateX is ideal for texts with minor variations, the large variations between these editions required a different analytical approach. Simple comparison methods such as difflib or online plagiarism checkers offered limited insights. In order to perform a more in-depth analysis, including semantic, structural and content-based comparisons (as far as possible for the Tibetan language), I developed TTM. This tool provides the quantitative metrics necessary to effectively assess textual similarities at the chapter level, helping researchers to understand broader patterns of textual evolution.

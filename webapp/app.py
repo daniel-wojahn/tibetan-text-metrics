@@ -2,7 +2,13 @@ import gradio as gr
 from pathlib import Path
 from pipeline.process import process_texts
 from pipeline.visualize import generate_visualizations, generate_word_count_chart
+from pipeline.llm_interpreter import get_interpretation
 import logging
+import pandas as pd
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 from theme import tibetan_theme
 
@@ -38,6 +44,10 @@ def main_interface():
                         file_types=[".txt"],
                         file_count="multiple",
                     )
+                    gr.Markdown(
+                        "<small>Note: Maximum file size: 10MB per file. For optimal performance, use files under 1MB.</small>",
+                        elem_classes="gr-markdown"
+                    )
             with gr.Column(scale=1, elem_classes="step-column"):
                 with gr.Group():
                     gr.Markdown(
@@ -53,6 +63,33 @@ def main_interface():
                         info="Semantic similarity will be time-consuming. Choose 'No' to speed up analysis if these metrics are not required.",
                         elem_id="semantic-radio-group",
                     )
+                    
+                    model_dropdown = gr.Dropdown(
+                        label="Embedding Model",
+                        choices=[
+                            "buddhist-nlp/buddhist-sentence-similarity",
+                            "fasttext-tibetan"
+                        ],
+                        value="buddhist-nlp/buddhist-sentence-similarity",
+                        info="Select the embedding model for semantic similarity.<br><br>"
+                             "<b>Model information:</b><br>"
+                             "• <a href='https://huggingface.co/buddhist-nlp/buddhist-sentence-similarity' target='_blank'>buddhist-nlp/buddhist-sentence-similarity</a>: Specialized model fine-tuned for Buddhist text similarity. Provides the best results for Tibetan Buddhist texts.<br>"
+                             "• <b>fasttext-tibetan</b>: Uses the official Facebook FastText Tibetan model pre-trained on a large corpus. If the official model cannot be loaded, it will fall back to training a custom model on your uploaded texts.",
+                        visible=True,
+                        interactive=True
+                    )
+                    
+                    stopwords_dropdown = gr.Dropdown(
+                        label="Stopword Filtering",
+                        choices=[
+                            "None (No filtering)", 
+                            "Standard (Common particles only)", 
+                            "Aggressive (All function words)"
+                        ],
+                        value="Aggressive (All function words)",  # Default to aggressive filtering
+                        info="Choose how aggressively to filter out common Tibetan particles and function words when calculating similarity. This helps focus on meaningful content words."
+                    )
+
                     process_btn = gr.Button(
                         "Run Analysis", elem_id="run-btn", variant="primary"
                     )
@@ -69,25 +106,38 @@ def main_interface():
         metrics_preview = gr.Dataframe(
             label="Similarity Metrics Preview", interactive=False, visible=True
         )
+        
+        # LLM Interpretation components
+        with gr.Row():
+            with gr.Column():
+                interpret_btn = gr.Button("Help Interpret Results", variant="primary")
+                gr.Markdown(
+                    "<small>Using free Claude 3.5 Sonnet via <a href='https://developer.puter.com/tutorials/free-unlimited-claude-35-sonnet-api/' target='_blank'>Puter API</a>. No API key required!</small>",
+                    elem_classes="gr-markdown"
+                )
+                interpretation_output = gr.Markdown(
+                    value="Click 'Help Interpret Results' to get an AI-powered interpretation of your similarity metrics."
+                )
+        
         word_count_plot = gr.Plot(label="Word Counts per Segment")
         # Heatmap tabs for each metric
         heatmap_titles = {
-            "Jaccard Similarity (%)": "Jaccard Similarity (%): Higher scores (brighter) mean more shared unique words.",
-            "Normalized LCS": "Normalized LCS: Higher scores (brighter) mean longer shared sequences of words.",
-            "Semantic Similarity (BuddhistNLP)": "Semantic Similarity (BuddhistNLP - using word embeddings/experimental): Higher scores (brighter) mean more similar meanings.",
-            "TF-IDF Cosine Sim": "TF-IDF Cosine Similarity: Higher scores mean texts share more important, distinctive vocabulary.",
+            "Jaccard Similarity (%)": "Jaccard Similarity (%): Higher scores (darker) mean more shared unique words.",
+            "Normalized LCS": "Normalized LCS: Higher scores (darker) mean longer shared sequences of words.",
+            "Semantic Similarity": "Semantic Similarity (using word embeddings/experimental): Higher scores (darker) mean more similar meanings.",
+            "TF-IDF Cosine Sim": "TF-IDF Cosine Similarity: Higher scores (darker) mean texts share more important, distinctive vocabulary.",
         }
 
         metric_tooltips = {
             "Jaccard Similarity (%)": """
 ### Jaccard Similarity (%)
-This metric quantifies the lexical overlap between two text segments by comparing their sets of *unique* words, after **filtering out common Tibetan stopwords**. 
-It essentially answers the question: 'Of all the distinct, meaningful words found across these two segments, what proportion of them are present in both?' 
-It is calculated as `(Number of common unique meaningful words) / (Total number of unique meaningful words in both texts combined) * 100`. 
-Jaccard Similarity is insensitive to word order and word frequency; it only cares whether a unique meaningful word is present or absent. 
-A higher percentage indicates a greater overlap in the significant vocabularies used in the two segments.
+This metric quantifies the lexical overlap between two text segments by comparing their sets of *unique* words, optionally filtering out common Tibetan stopwords. 
 
-**Stopword Filtering**: uses a range of stopwords to filter out common Tibetan words that do not contribute to the semantic content of the text.
+It essentially answers the question: 'Of all the distinct words found across these two segments, what proportion of them are present in both?' It is calculated as `(Number of common unique words) / (Total number of unique words in both texts combined) * 100`. 
+
+Jaccard Similarity is insensitive to word order and word frequency; it only cares whether a unique word is present or absent. A higher percentage indicates a greater overlap in the vocabularies used in the two segments.
+
+**Stopword Filtering**: When enabled (via the "Filter Stopwords" checkbox), common Tibetan particles and function words are filtered out before comparison. This helps focus on meaningful content words rather than grammatical elements.
 """,
             "Normalized LCS": """
 ### Normalized LCS (Longest Common Subsequence)
@@ -102,23 +152,36 @@ A higher Normalized LCS score suggests more significant shared phrasing, direct 
 **Note on Interpretation**: It is possible for Normalized LCS to be higher than Jaccard Similarity. This often happens when texts share a substantial 'narrative backbone' or common ordered phrases (leading to a high LCS), even if they use varied surrounding vocabulary or introduce many unique words not part of these core sequences (which would lower the Jaccard score). LCS highlights this sequential, structural similarity, while Jaccard focuses on the overall shared vocabulary regardless of its arrangement.
 """,
             "Semantic Similarity": """
-### Semantic Similarity (Experimental)
-Utilizes the `<a href="https://huggingface.co/buddhist-nlp/buddhist-sentence-similarity">buddhist-nlp/buddhist-sentence-similarity</a>` model to compute the cosine similarity between the semantic embeddings of text segments. 
-This model is fine-tuned for Buddhist studies texts and captures nuances in meaning. 
-For texts exceeding the model's 512-token input limit, an automated chunking strategy is employed: texts are divided into overlapping chunks, each chunk is embedded, and the resulting chunk embeddings are averaged (mean pooling) to produce a single representative vector for the entire segment before comparison.
+### Semantic Similarity
+Computes the cosine similarity between semantic embeddings of text segments using one of two approaches:
 
-**Note**: This metric is experimental and may not perform well for all texts. It is recommended to use it in combination with other metrics for a more comprehensive analysis.
+**1. Transformer-based Model**: Pre-trained model that understand contextual relationships between words.
+   - `buddhist-nlp/buddhist-sentence-similarity`: Specialized for Buddhist texts
+
+**2. FastText Model**: Uses the official Facebook FastText Tibetan model (facebook/fasttext-bo-vectors) pre-trained on a large corpus of Tibetan text. Falls back to a custom model only if the official model cannot be loaded.
+   - Creates embeddings specifically tailored to your corpus vocabulary
+   - Better for specialized Tibetan texts with domain-specific terminology
+   - Trained when first selected and saved for future use
+   - Optimized for Tibetan language with:
+     - Syllable-based tokenization preserving Tibetan syllable markers
+     - TF-IDF weighted averaging for word vectors (distinct from the TF-IDF Cosine Similarity metric)
+     - Enhanced parameters based on Tibetan NLP research
+
+**Chunking for Long Texts**: For texts exceeding the model's token limit, an automated chunking strategy is employed: texts are divided into overlapping chunks, each chunk is embedded, and the resulting embeddings are averaged to produce a single vector for the entire segment.
+
+**Stopword Filtering**: When enabled (via the "Filter Stopwords" checkbox), common Tibetan particles and function words are filtered out before computing embeddings. This helps focus on meaningful content words. Transformer models process the full text regardless of stopword filtering setting.
+
+**Note**: This metric works best when combined with other metrics for a more comprehensive analysis.
 """,
             "TF-IDF Cosine Sim": """
 ### TF-IDF Cosine Similarity
-This metric first calculates Term Frequency-Inverse Document Frequency (TF-IDF) scores for each word in each text segment, **after filtering out common Tibetan stopwords**. 
-TF-IDF gives higher weight to words that are frequent within a particular segment but relatively rare across the entire collection of segments. 
-This helps to identify terms that are characteristic or discriminative for a segment. By excluding stopwords, the TF-IDF scores better reflect genuinely significant terms.
-Each segment is then represented as a vector of these TF-IDF scores. 
-Finally, the cosine similarity is computed between these vectors. 
-A score closer to 1 indicates that the two segments share more of these important, distinguishing terms, suggesting they cover similar specific topics or themes.
+This metric calculates Term Frequency-Inverse Document Frequency (TF-IDF) scores for each word in each text segment, optionally filtering out common Tibetan stopwords. 
 
-**Stopword Filtering**: uses a range of stopwords to filter out common Tibetan words that do not contribute to the semantic content of the text.
+TF-IDF gives higher weight to words that are frequent within a particular segment but relatively rare across the entire collection of segments. This helps identify terms that are characteristic or discriminative for a segment. When stopword filtering is enabled, the TF-IDF scores better reflect genuinely significant terms by excluding common particles and function words.
+
+Each segment is represented as a vector of these TF-IDF scores, and the cosine similarity is computed between these vectors. A score closer to 1 indicates that the two segments share more important, distinguishing terms, suggesting they cover similar specific topics or themes.
+
+**Stopword Filtering**: When enabled (via the "Filter Stopwords" checkbox), common Tibetan particles and function words are filtered out. This can be toggled on/off to compare results with and without stopwords.
 """,
         }
         heatmap_tabs = {}
@@ -145,7 +208,25 @@ A score closer to 1 indicates that the two segments share more of these importan
 
         warning_box = gr.Markdown(visible=False)
 
-        def run_pipeline(files, enable_semantic_str):
+        def run_pipeline(files, enable_semantic, model_name, stopwords_option="Aggressive (All function words)", progress=gr.Progress()):
+            """Run the text analysis pipeline on the uploaded files.
+
+            Args:
+                files: List of uploaded files
+                enable_semantic: Whether to compute semantic similarity
+                model_name: Name of the embedding model to use
+                stopwords_option: Stopword filtering level (None, Standard, or Aggressive)
+                progress: Gradio progress indicator
+
+            Returns:
+                Tuple of (metrics_df, heatmap_jaccard, heatmap_lcs, heatmap_semantic, heatmap_tfidf, word_count_fig)
+            """
+            # Initialize progress tracking
+            try:
+                progress_tracker = gr.Progress()
+            except Exception as e:
+                logger.warning(f"Could not initialize progress tracker: {e}")
+                progress_tracker = None
             # Initialize all return values to ensure defined paths for all outputs
             csv_path_res = None
             metrics_preview_df_res = None # Can be a DataFrame or a string message
@@ -172,6 +253,7 @@ A score closer to 1 indicates that the two segments share more of these importan
                     - semantic_heatmap (matplotlib.figure.Figure | None): Semantic similarity heatmap, or None.
                     - warning_update (gr.update): Gradio update for the warning box.
             """
+            # Check if files are provided
             if not files:
                 return (
                     None,
@@ -183,21 +265,76 @@ A score closer to 1 indicates that the two segments share more of these importan
                     None,  # tfidf_heatmap
                     gr.update(value="Please upload files.", visible=True),
                 )
+                
+            # Check file size limits (10MB per file)
+            for file in files:
+                file_size_mb = Path(file.name).stat().st_size / (1024 * 1024)
+                if file_size_mb > 10:
+                    return (
+                        None,
+                        f"File '{Path(file.name).name}' exceeds the 10MB size limit (size: {file_size_mb:.2f}MB).",
+                        None, None, None, None, None,
+                        gr.update(value=f"Error: File '{Path(file.name).name}' exceeds the 10MB size limit.", visible=True),
+                    )
 
             try:
+                if progress_tracker is not None:
+                    try:
+                        progress_tracker(0.1, desc="Preparing files...")
+                    except Exception as e:
+                        logger.warning(f"Progress update error (non-critical): {e}")
+                
+                # Get filenames and read file contents
                 filenames = [
                     Path(file.name).name for file in files
                 ]  # Use Path().name to get just the filename
-                text_data = {
-                    Path(file.name)
-                    .name: Path(file.name)
-                    .read_text(encoding="utf-8-sig")
-                    for file in files
-                }
+                text_data = {}
+                
+                # Read files with progress updates
+                for i, file in enumerate(files):
+                    file_path = Path(file.name)
+                    filename = file_path.name
+                    if progress_tracker is not None:
+                        try:
+                            progress_tracker(0.1 + (0.1 * (i / len(files))), desc=f"Reading file: {filename}")
+                        except Exception as e:
+                            logger.warning(f"Progress update error (non-critical): {e}")
+                    
+                    try:
+                        text_data[filename] = file_path.read_text(encoding="utf-8-sig")
+                    except UnicodeDecodeError:
+                        # Try with different encodings if UTF-8 fails
+                        try:
+                            text_data[filename] = file_path.read_text(encoding="utf-16")
+                        except UnicodeDecodeError:
+                            return (
+                                None,
+                                f"Error: Could not decode file '{filename}'. Please ensure it contains valid Tibetan text in UTF-8 or UTF-16 encoding.",
+                                None, None, None, None, None,
+                                gr.update(value=f"Error: Could not decode file '{filename}'.", visible=True),
+                            )
 
-                enable_semantic_bool = enable_semantic_str == "Yes"
+                # Configure semantic similarity
+                enable_semantic_bool = enable_semantic == "Yes"
+                
+                if progress_tracker is not None:
+                    try:
+                        progress_tracker(0.2, desc="Loading model..." if enable_semantic_bool else "Processing text...")
+                    except Exception as e:
+                        logger.warning(f"Progress update error (non-critical): {e}")
+                
+                # Process texts with selected model
+                # Convert stopword option to appropriate parameters
+                use_stopwords = stopwords_option != "None (No filtering)"
+                use_lite_stopwords = stopwords_option == "Standard (Common particles only)"
+                
                 df_results, word_counts_df_data, warning_raw = process_texts(
-                    text_data, filenames, enable_semantic=enable_semantic_bool
+                    text_data, filenames, 
+                    enable_semantic=enable_semantic_bool, 
+                    model_name=model_name,
+                    use_stopwords=use_stopwords,
+                    use_lite_stopwords=use_lite_stopwords,
+                    progress_callback=progress_tracker
                 )
 
                 if df_results.empty:
@@ -209,20 +346,43 @@ A score closer to 1 indicates that the two segments share more of these importan
                     warning_update_res = gr.update(value=warning_message, visible=True)
                     # Results for this case are set, then return
                 else:
+                    # Generate visualizations
+                    if progress_tracker is not None:
+                        try:
+                            progress_tracker(0.8, desc="Generating visualizations...")
+                        except Exception as e:
+                            logger.warning(f"Progress update error (non-critical): {e}")
+                    
                     # heatmap_titles is already defined in the outer scope of main_interface
                     heatmaps_data = generate_visualizations(
                         df_results, descriptive_titles=heatmap_titles
                     )
+                    
+                    # Generate word count chart
+                    if progress_tracker is not None:
+                        try:
+                            progress_tracker(0.9, desc="Creating word count chart...")
+                        except Exception as e:
+                            logger.warning(f"Progress update error (non-critical): {e}")
                     word_count_fig_res = generate_word_count_chart(word_counts_df_data)
+                    
+                    # Save results to CSV
+                    if progress_tracker is not None:
+                        try:
+                            progress_tracker(0.95, desc="Saving results...")
+                        except Exception as e:
+                            logger.warning(f"Progress update error (non-critical): {e}")
                     csv_path_res = "results.csv"
                     df_results.to_csv(csv_path_res, index=False)
+                    
+                    # Prepare final output
                     warning_md = f"**⚠️ Warning:** {warning_raw}" if warning_raw else ""
                     metrics_preview_df_res = df_results.head(10)
 
                     jaccard_heatmap_res = heatmaps_data.get("Jaccard Similarity (%)")
                     lcs_heatmap_res = heatmaps_data.get("Normalized LCS")
                     semantic_heatmap_res = heatmaps_data.get(
-                        "Semantic Similarity (BuddhistNLP)"
+                        "Semantic Similarity"
                     )
                     tfidf_heatmap_res = heatmaps_data.get("TF-IDF Cosine Sim")
                     warning_update_res = gr.update(
@@ -244,23 +404,48 @@ A score closer to 1 indicates that the two segments share more of these importan
                 lcs_heatmap_res,
                 semantic_heatmap_res,
                 tfidf_heatmap_res,
-                warning_update_res,
+                warning_update_res
             )
 
+        # Function to interpret results using LLM
+        def interpret_results(csv_path):
+            try:
+                if not csv_path or not Path(csv_path).exists():
+                    return "Please run the analysis first to generate results."
+                
+                # Read the CSV file
+                df_results = pd.read_csv(csv_path)
+                
+                # Get interpretation from LLM (using Puter API - free Claude 3.5 Sonnet)
+                interpretation = get_interpretation(df_results)
+                
+                return interpretation
+            except Exception as e:
+                logger.error(f"Error in interpret_results: {e}", exc_info=True)
+                return f"Error interpreting results: {str(e)}"
+        
         process_btn.click(
-            run_pipeline,
-            inputs=[file_input, semantic_toggle_radio],
+            fn=run_pipeline,
+            inputs=[file_input, semantic_toggle_radio, model_dropdown, stopwords_dropdown],
             outputs=[
                 csv_output,
                 metrics_preview,
                 word_count_plot,
                 heatmap_tabs["Jaccard Similarity (%)"],
                 heatmap_tabs["Normalized LCS"],
-                heatmap_tabs["Semantic Similarity (BuddhistNLP)"],
+                heatmap_tabs["Semantic Similarity"],
                 heatmap_tabs["TF-IDF Cosine Sim"],
                 warning_box,
-            ],
+            ]
         )
+        
+        # Connect the interpret button
+        interpret_btn.click(
+            fn=interpret_results,
+            inputs=[csv_output],
+            outputs=interpretation_output
+        )
+        
     return demo
 
 

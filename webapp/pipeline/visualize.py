@@ -25,7 +25,6 @@ def generate_visualizations(metrics_df: pd.DataFrame, descriptive_titles: dict =
 
     # --- Heatmaps for each metric ---
     heatmaps = {}
-    # Using 'Reds' colormap as requested for a red/white gradient.
     # Chapter 1 will be at the top of the Y-axis due to sort_index(ascending=False).
     for metric in metric_cols:
         # Check if all values for this metric are NaN
@@ -41,19 +40,38 @@ def generate_visualizations(metrics_df: pd.DataFrame, descriptive_titles: dict =
             continue
 
         cleaned_columns = [col.replace(".txt", "") for col in pivot.columns]
-        cmap = "Reds"  # Apply 'Reds' colormap to all heatmaps
+        
+        # For consistent interpretation: higher values (more similarity) = darker colors
+        # Using 'Reds' colormap for all metrics (dark red = high similarity)
+        cmap = "Reds"  
+        
+        # Format values for display
         text = [
             [f"{val:.2f}" if pd.notnull(val) else "" for val in row]
             for row in pivot.values
         ]
+        
+        # Create a copy of the pivot data for visualization
+        # For LCS and Semantic Similarity, we need to reverse the color scale
+        # so that higher values (more similarity) are darker
+        viz_values = pivot.values.copy()
+        
+        # Determine if we need to reverse the values for consistent color interpretation
+        # (darker = more similar across all metrics)
+        reverse_colorscale = False
+        
+        # All metrics should have darker colors for higher similarity
+        # No need to reverse values anymore - we'll use the same scale for all
+        
         fig = go.Figure(
             data=go.Heatmap(
-                z=pivot.values,
+                z=viz_values,
                 x=cleaned_columns,
                 y=pivot.index,
                 colorscale=cmap,
-                zmin=float(np.nanmin(pivot.values)),
-                zmax=float(np.nanmax(pivot.values)),
+                reversescale=reverse_colorscale,  # Use the same scale direction for all metrics
+                zmin=float(np.nanmin(viz_values)),
+                zmax=float(np.nanmax(viz_values)),
                 text=text,
                 texttemplate="%{text}",
                 hovertemplate="Chapter %{y}<br>Text Pair: %{x}<br>Value: %{z:.2f}<extra></extra>",
