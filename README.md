@@ -19,6 +19,29 @@ TibetanTextMetrics (TTM) grew out of the challenge of analysing multiple edition
 - **Text Evolution Analysis**: Helps trace how texts evolved over time by identifying where successive authors and editors incorporated additional material
 - **Data-Driven Insights**: Provides quantitative metrics to complement qualitative textual analysis
 - **N-gram Pattern Analysis**: Compares how often different word or POS tag sequences (n-grams) appear in each text, using a pattern-based approach that detects similarities in _style_ and _structure_, not just exact matches.
+ 
+## Web App (Gradio) — run locally
+
+The project includes a user-friendly web interface located in `ttm-webapp-hf/` that exposes the core TTM comparison workflow (upload Tibetan `.txt` files, segment by `༈`, compute Jaccard, Normalized LCS, Fuzzy, and Semantic similarity, and visualize results via heatmaps and bar charts).
+
+Quick start for the web app:
+
+```bash
+# From the repo root
+python -m venv .venv
+source .venv/bin/activate   # On Windows: .venv\Scripts\activate
+
+cd ttm-webapp-hf
+pip install -r requirements.txt
+
+# Optional but recommended (faster LCS)
+python setup.py build_ext --inplace
+
+# Run the app
+python app.py
+```
+
+Then open the provided local URL (usually http://127.0.0.1:7860). For full details (features, stopword levels, embedding models, interpretation helper), see `ttm-webapp-hf/README.md`.
 
 ## Approach & Metrics
 
