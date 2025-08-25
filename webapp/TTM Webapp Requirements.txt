@@ -1,0 +1,32 @@
+# Core application and UI
+gradio
+pandas==2.2.3
+
+# Plotting and visualization
+plotly==6.0.0
+matplotlib==3.10.1
+seaborn==0.13.2
+
+# Machine learning and numerical processing
+numpy==1.26.4
+scikit-learn==1.6.1
+numba==0.61.2
+sentence-transformers==3.0.1
+
+# Tibetan language processing
+botok
+
+# Build system for Cython
+Cython==3.0.12
+
+# HuggingFace integration
+huggingface_hub[hf_xet]==0.20.3
+
+# LLM integration
+python-dotenv==1.0.0
+requests==2.31.0
+
+# Fuzzy string matching
+thefuzz
+python-Levenshtein
+tabulate

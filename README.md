@@ -18,11 +18,10 @@ TibetanTextMetrics (TTM) grew out of the challenge of analysing multiple edition
 - **Flexible Text Segmentation**: Adaptable for various historical texts and genres (a corpus like the many Sakya Genealogies (*sa skya gdung rabs*) or different editions of biographical literature (*rnam thar*) come to mind)
 - **Text Evolution Analysis**: Helps trace how texts evolved over time by identifying where successive authors and editors incorporated additional material
 - **Data-Driven Insights**: Provides quantitative metrics to complement qualitative textual analysis
-- **N-gram Pattern Analysis**: Compares how often different word or POS tag sequences (n-grams) appear in each text, using a pattern-based approach that detects similarities in _style_ and _structure_, not just exact matches.
  
 ## Web App (Gradio) — run locally
 
-The project includes a user-friendly web interface located in `ttm-webapp-hf/` that exposes the core TTM comparison workflow (upload Tibetan `.txt` files, segment by `༈`, compute Jaccard, Normalized LCS, Fuzzy, and Semantic similarity, and visualize results via heatmaps and bar charts).
+The project includes a user-friendly web interface located in `ttm-webapp/` that exposes the core TTM comparison workflow (upload Tibetan `.txt` files, segment by `༈`, compute Jaccard, Normalized LCS, Fuzzy, and Semantic similarity, and visualize results via heatmaps and bar charts).
 
 Quick start for the web app:
 
@@ -31,7 +30,7 @@ Quick start for the web app:
 python -m venv .venv
 source .venv/bin/activate   # On Windows: .venv\Scripts\activate
 
-cd ttm-webapp-hf
+cd ttm-webapp
 pip install -r requirements.txt
 
 # Optional but recommended (faster LCS)
@@ -41,21 +40,15 @@ python setup.py build_ext --inplace
 python app.py
 ```
 
-Then open the provided local URL (usually http://127.0.0.1:7860). For full details (features, stopword levels, embedding models, interpretation helper), see `ttm-webapp-hf/README.md`.
+Then open the provided local URL (usually http://127.0.0.1:7860). For full details (features, stopword levels, embedding models, interpretation helper), see `ttm-webapp/README.md`.
 
 ## Approach & Metrics
 
 This tool uses several complementary approaches to compare Tibetan texts:
 
-- **Syntactic Distance (Normalized):** Measures how similarly two texts are structured grammatically. A low score means the sentence structures are alike; a high score means they are quite different. This highlights differences in style or editing.
-
 - **Weighted Jaccard Similarity:** Calculates how much important vocabulary (especially nouns and verbs) is shared between texts. A higher score means the texts use similar vocabulary; a lower score means they focus on different things.
 
 - **Normalized LCS (Longest Common Subsequence):** Finds the longest sequence of words that appears in both texts, even if there are gaps. A longer shared sequence suggests similar or copied passages; a shorter one means more differences.
-
-- **Pattern Recognition (N-gram Analysis):** Looks for repeating patterns of words or grammatical tags (like pairs or triplets). If two texts use similar patterns often, they may be stylistically or structurally related, even if the exact words differ. This helps identify stylistic or structural resemblance, not just direct copying.
-
-- **Principal Component Analysis (PCA):** Combines the above metrics into a multi-dimensional visualization, helping you spot clusters, similarities, and outliers among texts and chapters.
 
 - **Visualizations:** Generates heatmaps for each metric to help you quickly see which texts or chapters are most similar or different.
 
@@ -78,7 +71,6 @@ This tool uses several complementary approaches to compare Tibetan texts:
 
 - **CSV file**: `output/metrics/pos_tagged_analysis.csv` with normalized metrics only.
 - **Visualizations**: Heatmaps for each normalized metric in `output/heatmaps/`.
-- **PCA**: Principal Component Analysis based on normalized metrics.
 
 ## Installation
 
@@ -115,45 +107,6 @@ cd tibetan-text-metrics
 ## Usage
 
 > **⚠️ Important**: This tool requires at least one Tibetan section marker (*sbrul shad*, ༈) at the beginning of each input text. These markers are essential for the text segmentation functionality and preprocessing steps.
-
-1. Prepare your input files:
-   - Place your POS-tagged Tibetan text files in the `input_files/` directory
-   - Files should use the format: `word1/POS1 word2/POS2 word3/POS3`
-   - For POS-tagging, you can use [ACTib](https://github.com/lothelanor/actib), which combines [Botok](https://github.com/OpenPecha/botok) for tokenization with Memory-Based Tagger for POS tagging. Note that POS tagging for Classical Tibetan is still an active area of research, and manual validation of the results is recommended.
-
-2. Run the analysis:
-
-   ```cmd
-   python -m tibetan_text_metrics.main
-   ```
-   Or if you're running from the repo root:
-   ```bash
-   python -m src.tibetan_text_metrics.main
-   ```
-   The tool will prompt you to select an n-gram size for pattern analysis:
-   - **n=2 (Bigrams)**: Best for finding common word pairs and basic phrases
-   - **n=3 (Trigrams)**: Default, good balance of specificity and coverage
-   - **n=4 (4-grams)**: Better for identifying recurring expressions
-   - **n=5 (5-grams)**: Best for finding exact repeated passages
-   
-   Choose based on your analysis needs - larger n-grams are better for finding specific textual parallels, while smaller n-grams help identify general structural similarities.
-   
-   The tool will then process all text files in the `input_files` directory. On Windows, this directory will be at `input_files\` relative to your project root.
-
-3. View results:
-   - CSV file with metrics: `output/metrics/pos_tagged_analysis.csv`
-   - Heatmap visualizations: `output/heatmaps/`
-   - PCA visualizations: `output/pca/interactive_pca_visualization.html`
-
-## Future Directions: Phrase Detection
-
-Phrase detection aims to go beyond fixed-length n-grams by identifying meaningful, recurring expressions in Tibetan texts—such as set formulas, idioms, or common syntactic constructions. This can be done using:
-
-- **Rule-based methods** (e.g., splitting by Tibetan punctuation or known grammatical patterns)
-- **Statistical methods** (e.g., finding word combinations that occur together more than by chance)
-- **Machine learning** (e.g., algorithms that learn to spot phrase boundaries from data)
-
-In Tibetan, this could mean detecting multi-syllable expressions, formulaic legal or religious phrases, or idioms. Integrating phrase detection would make the tool even more linguistically aware and valuable for genres where set expressions matter. This is a planned area for future development—suggestions and collaborations are welcome!
 
 ## License
 
