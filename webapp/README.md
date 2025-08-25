@@ -52,18 +52,12 @@ The Tibetan Text Metrics project aims to provide quantitative methods for assess
 
 ### Using AI-Powered Analysis
 
-The application includes an "Interpret Results" button that provides scholarly insights about your text similarity metrics. This feature:
+The application includes a "Help Interpret Results" button that can provide scholarly insights about your text similarity metrics. This feature:
 
-1. Uses a selection of free OpenRouter models to analyze your results
-2. Requires an OpenRouter API key (set via environment variable)
-3. The AI will provide a comprehensive scholarly analysis including:
-   - Introduction explaining the texts compared and general observations
-   - Overall patterns across all chapters with visualized trends
-   - Detailed examination of notable chapters (highest/lowest similarity)
-   - Discussion of what different metrics reveal about textual relationships
-   - Conclusions suggesting implications for Tibetan textual scholarship
-   - Specific questions these findings raise for further investigation
-   - Cautionary notes about interpreting perfect matches or zero similarity scores
+1. Sends the results table (as Markdown) to an LLM via OpenRouter if `OPENROUTER_API_KEY` is set; otherwise falls back to a built-in rule-based analysis.
+2. Uses a system prompt framing the assistant as a senior scholar of Tibetan Buddhist textual criticism and asks for a concise interpretation focusing on relationships and implications (not restating values).
+3. Tries free OpenRouter models in order: `qwen/qwen3-235b-a22b-07-25:free`, `deepseek/deepseek-r1-0528:free`, `google/gemma-2-9b-it:free`, `moonshotai/kimi-k2:free` (see `pipeline/llm_service.py`).
+4. Produces a clear narrative discussing overall patterns, notable segments, and metric implications, with cautions about over‑interpreting extremes.
 
 ### Data Processing
 
@@ -170,6 +164,26 @@ This helps focus on meaningful content words rather than grammatical elements.
     python app.py
     ```
 7.  Open your web browser and go to the local URL provided (usually `http://127.0.0.1:7860`).
+
+### Optional: Enable AI Interpretation via OpenRouter
+
+To enable LLM-based interpretation for the "Help Interpret Results" feature, set your API key before running:
+
+**macOS/Linux (bash/zsh)**
+```bash
+export OPENROUTER_API_KEY="your_api_key_here"
+```
+
+**Windows (PowerShell)**
+```powershell
+setx OPENROUTER_API_KEY "your_api_key_here"
+# Restart terminal to apply
+```
+
+**Windows (cmd, current session only)**
+```cmd
+set OPENROUTER_API_KEY=your_api_key_here
+```
 
 ## Usage
 

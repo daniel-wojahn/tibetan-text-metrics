@@ -21,7 +21,7 @@ TibetanTextMetrics (TTM) grew out of the challenge of analysing multiple edition
  
 ## Web App (Gradio) — run locally
 
-The project includes a user-friendly web interface located in `ttm-webapp/` that exposes the core TTM comparison workflow (upload Tibetan `.txt` files, segment by `༈`, compute Jaccard, Normalized LCS, Fuzzy, and Semantic similarity, and visualize results via heatmaps and bar charts).
+The project includes a user-friendly web interface located in `webapp/` that exposes the core TTM comparison workflow (upload Tibetan `.txt` files, segment by `༈`, compute Jaccard, Normalized LCS, Fuzzy, and Semantic similarity, and visualize results via heatmaps and bar charts).
 
 Quick start for the web app:
 
@@ -30,7 +30,7 @@ Quick start for the web app:
 python -m venv .venv
 source .venv/bin/activate   # On Windows: .venv\Scripts\activate
 
-cd ttm-webapp
+cd webapp
 pip install -r requirements.txt
 
 # Optional but recommended (faster LCS)
@@ -40,37 +40,37 @@ python setup.py build_ext --inplace
 python app.py
 ```
 
-Then open the provided local URL (usually http://127.0.0.1:7860). For full details (features, stopword levels, embedding models, interpretation helper), see `ttm-webapp/README.md`.
+Then open the provided local URL (usually http://127.0.0.1:7860). For full details (features, stopword levels, embedding models, interpretation helper), see `webapp/README.md`.
 
 ## Approach & Metrics
 
-This tool uses several complementary approaches to compare Tibetan texts:
+This tool uses complementary approaches to compare Tibetan texts at the chapter/segment level:
 
-- **Weighted Jaccard Similarity:** Calculates how much important vocabulary (especially nouns and verbs) is shared between texts. A higher score means the texts use similar vocabulary; a lower score means they focus on different things.
-
-- **Normalized LCS (Longest Common Subsequence):** Finds the longest sequence of words that appears in both texts, even if there are gaps. A longer shared sequence suggests similar or copied passages; a shorter one means more differences.
-
-- **Visualizations:** Generates heatmaps for each metric to help you quickly see which texts or chapters are most similar or different.
-
-### Why These Metrics?
-- **Content-level analysis** (e.g., word2vec, BERT, etc.) is not yet reliable for Tibetan due to limited resources and training data.
-- **Structural metrics** (POS-based, LCS, Jaccard) are language-agnostic and robust even with limited semantic resources.
-- **Weighted approaches** allow you to emphasize linguistically important features (e.g., nouns, verbs).
+- **Jaccard Similarity (%)**: Lexical overlap over unique tokens. Supports stopword filtering (None, Standard, Aggressive) using curated Tibetan lists in `webapp/pipeline/stopwords_bo.py` and `webapp/pipeline/stopwords_lite_bo.py`.
+- **Normalized LCS (Longest Common Subsequence)**: Sequential/structural similarity over token sequences. Normalized by the average length of the two segments (range 0–1). Uses an optional Cython acceleration if compiled (`webapp/fast_lcs.pyx`).
+- **Fuzzy Similarity**: Approximate string similarity via TheFuzz with selectable methods (token_set, token_sort, partial, ratio). Honors the selected stopword filtering.
+- **Semantic Similarity**: Cosine similarity of sentence-transformer embeddings (default: `sentence-transformers/LaBSE`).
 
 ### Interpreting the Results
-- **Normalized Syntactic Distance**: 0 means identical structure, 1 means completely different.
-- **Weighted Jaccard**: Higher is more overlap (max 100%).
-- **Normalized LCS**: Higher is more sequential similarity (max 100%).
+- **Jaccard Similarity**: 0–100%. Higher = more shared unique words (after optional stopword filtering).
+- **Normalized LCS**: 0–1. Higher = longer ordered sequences in common.
+- **Fuzzy Similarity**: 0–1. Higher = more approximate matches (robust to spelling/order variations).
+- **Semantic Similarity**: 0–1. Higher = more similar meanings (embedding-based).
 
 ### Limitations
-- **Semantic depth**: Without reliable word embeddings or semantic models for Tibetan, the analysis can’t fully capture meaning-level similarity.
-- **POS tagging accuracy**: All structural metrics depend on the quality of POS tagging.
+- **Semantic depth**: Because embedding-based similarity for Tibetan is still developing, it should be combined with structural and lexical metrics for comprehensive insights.
+- **Segmentation quality**: Results depend on sensible chapter/section segmentation using `༈`.
 
 
 ## Output
 
-- **CSV file**: `output/metrics/pos_tagged_analysis.csv` with normalized metrics only.
-- **Visualizations**: Heatmaps for each normalized metric in `output/heatmaps/`.
+- **CSV file**: A `results.csv` file is written to the current working directory when running the web app (`webapp/`).
+- **Visualizations**: Interactive Plotly heatmaps for Jaccard, LCS, Fuzzy, and Semantic similarity, plus a word count bar chart — displayed in the app UI. Heatmaps are not saved automatically; export via screenshots or Plotly utilities if needed.
+
+### Optional: AI Interpretation (OpenRouter)
+- **Send results to an LLM**: Click “Help Interpret Results” to send `results.csv` to an LLM via OpenRouter for a scholarly interpretation of the metrics. Set `OPENROUTER_API_KEY` in your environment. If unavailable, the app falls back to a rule‑based analysis.
+- **Prompt summary**: The app converts the results DataFrame into a Markdown table and asks for a concise, scholarly interpretation focusing on implications and relationships between texts (not restating values). It includes the model name and uses a system prompt framing the assistant as a senior scholar of Tibetan Buddhist textual criticism.
+- **Available models (auto‑fallback order)**: `qwen/qwen3-235b-a22b-07-25:free`, `deepseek/deepseek-r1-0528:free`, `google/gemma-2-9b-it:free`, `moonshotai/kimi-k2:free` (see `webapp/pipeline/llm_service.py`).
 
 ## Installation
 
@@ -79,34 +79,63 @@ This tool uses several complementary approaches to compare Tibetan texts:
 git clone https://github.com/daniel-wojahn/tibetan-text-metrics.git
 cd tibetan-text-metrics
 ```
-2. Set up your environment:
+2. Create and activate a virtual environment (Python 3.10+):
 
-   **For Windows:**
-   - Install [Build Tools for Visual Studio](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
-     - During installation, select "Desktop development with C++"
-     - This is required for compiling Cython extensions
-   - Use a virtual environment (recommended):
+   **Windows**
    ```cmd
    python -m venv .venv
    .venv\Scripts\activate
    ```
 
-   **For macOS/Linux:**
-   - Use Python 3.10 or later
+   **macOS/Linux**
    ```bash
    python -m venv .venv
    source .venv/bin/activate
    ```
 
-4. Install the package and its dependencies:
+3. Install the web app dependencies:
    ```bash
-   pip install -e .
+   cd webapp
+   pip install -r requirements.txt
+   ```
+
+4. (Optional) Compile the Cython LCS extension for speed:
+   ```bash
+   python setup.py build_ext --inplace
+   ```
+
+4a. (Optional) Enable AI interpretation via OpenRouter:
+
+   Set your OpenRouter API key so the “Help Interpret Results” feature can call an LLM.
+
+   **macOS/Linux (bash/zsh)**
+   ```bash
+   export OPENROUTER_API_KEY="your_api_key_here"
+   ```
+
+   **Windows (PowerShell)**
+   ```powershell
+   setx OPENROUTER_API_KEY "your_api_key_here"
+   # Restart terminal to apply
+   ```
+
+   **Windows (cmd, current session only)**
+   ```cmd
+   set OPENROUTER_API_KEY=your_api_key_here
+   ```
+
+5. Run the web app:
+   ```bash
+   python app.py
    ```
 
 
 ## Usage
 
-> **⚠️ Important**: This tool requires at least one Tibetan section marker (*sbrul shad*, ༈) at the beginning of each input text. These markers are essential for the text segmentation functionality and preprocessing steps.
+- Upload two or more `.txt` files containing Tibetan Unicode text.
+- Use the Tibetan section marker `༈` to separate chapters/sections; without it, each file is treated as one segment and a warning is shown.
+- Choose whether to compute Semantic and Fuzzy similarity and select a stopword filtering level.
+- After running, download `results.csv` and explore the heatmaps and word count chart.
 
 ## License
 
